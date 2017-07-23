@@ -85,7 +85,7 @@ namespace jrmwng
 			simd_string(char const *pc)
 				: m_ymm(_mm256_setzero_si256())
 			{
-				strncpy_s(m_ymm.m256i_i8, pc, 15);
+				strncpy_s(m_ymm.m256i_i8, pc, 31);
 			}
 
 			int cmplt(simd_string const & that) const
@@ -171,4 +171,9 @@ namespace jrmwng
 	{
 		return os << static_cast<char const*>(str);
 	}
+
+	template <typename Tchar>
+	using sse_string = simd_string<__m128i, Tchar>;
+	template <typename Tchar>
+	using avx_string = simd_string<__m256i, Tchar>;
 }
