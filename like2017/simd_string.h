@@ -15,6 +15,9 @@ namespace jrmwng
 		{
 			__m128i m_xmm;
 
+			simd_string(simd_string const & that)
+				: m_xmm(that.m_xmm)
+			{}
 			simd_string(char const *pc)
 			{
 				strncpy_s(m_xmm.m128i_i8, 16, pc, 15);
@@ -48,6 +51,9 @@ namespace jrmwng
 		{
 			__m128i m_xmm;
 
+			simd_string(simd_string const & that)
+				: m_xmm(that.m_xmm)
+			{}
 			simd_string(wchar_t const *pc)
 				: m_xmm(_mm_setzero_si128())
 			{
@@ -82,6 +88,9 @@ namespace jrmwng
 		{
 			__m256i m_ymm;
 
+			simd_string(simd_string const & that)
+				: m_ymm(that.m_ymm)
+			{}
 			simd_string(char const *pc)
 				: m_ymm(_mm256_setzero_si256())
 			{
