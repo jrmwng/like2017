@@ -7,11 +7,12 @@ namespace jrmwng
 	namespace detail
 	{
 		template <typename Tmm, typename Tchar>
-		struct simd_string;
+		class simd_string;
 
 		template <>
-		struct simd_string<__m128i, char>
+		class simd_string<__m128i, char>
 		{
+		protected:
 			__m128i m_xmm;
 
 			simd_string(simd_string const & that)
@@ -37,30 +38,101 @@ namespace jrmwng
 				__m128i const b16This = m_xmm;
 				return _mm_cmpistrc(b16That, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
 			}
-
-			operator char const * () const
+		public:
+			char const * c_str() const
 			{
 				return m_xmm.m128i_i8;
 			}
 
-			int index_of(char cPattern) const
+			int find(char cPattern) const
 			{
 				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
 				__m128i const b16This = m_xmm;
 				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
 				return nIndex;
 			}
-			int index_of(simd_string const & that) const
+			int find(simd_string const & that) const
 			{
 				__m128i const b16That = that.m_xmm;
 				__m128i const b16This = m_xmm;
 				int const nIndex = _mm_cmpistri(b16That, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
 				return nIndex;
 			}
+			int rfind(char cPattern) const
+			{
+				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				return nIndex;
+			}
+			int rfind(simd_string const & that) const
+			{
+				__m128i const b16That = that.m_xmm;
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b16That, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				return nIndex;
+			}
+			int find_first_of(char cPattern) const
+			{
+				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
+				return nIndex;
+			}
+			int find_first_of(simd_string const & that) const
+			{
+				__m128i const b1Pattern = that.m_xmm;
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
+				return nIndex;
+			}
+			int find_first_not_of(char cPattern) const
+			{
+				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
+				return nIndex;
+			}
+			int find_first_not_of(simd_string const & that) const
+			{
+				__m128i const b1Pattern = that.m_xmm;
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
+				return nIndex;
+			}
+			int find_last_of(char cPattern) const
+			{
+				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_POSITIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				return nIndex;
+			}
+			int find_last_of(simd_string const & that) const
+			{
+				__m128i const b1Pattern = that.m_xmm;
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_POSITIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				return nIndex;
+			}
+			int find_last_not_of(char cPattern) const
+			{
+				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				return nIndex;
+			}
+			int find_last_not_of(simd_string const & that) const
+			{
+				__m128i const b1Pattern = that.m_xmm;
+				__m128i const b16This = m_xmm;
+				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				return nIndex;
+			}
 		};
 		template <>
-		struct simd_string<__m128i, char16_t>
+		class simd_string<__m128i, char16_t>
 		{
+		protected:
 			__m128i m_xmm;
 
 			simd_string(simd_string const & that)
@@ -87,20 +159,20 @@ namespace jrmwng
 				__m128i const b16This = m_xmm;
 				return _mm_cmpistrc(b16That, b16This, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
 			}
-
-			operator char16_t const * () const
+		public:
+			char16_t const * c_str() const
 			{
 				return reinterpret_cast<char16_t const*>(m_xmm.m128i_i16);
 			}
 
-			int index_of(char16_t cPattern) const
+			int find(char16_t cPattern) const
 			{
 				__m128i const uw1Pattern = _mm_cvtsi32_si128(cPattern);
 				__m128i const uw8This = m_xmm;
 				int const nIndex = _mm_cmpistri(uw1Pattern, uw8This, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
 				return nIndex;
 			}
-			int index_of(simd_string const & that) const
+			int find(simd_string const & that) const
 			{
 				__m128i const b16That = that.m_xmm;
 				__m128i const b16This = m_xmm;
@@ -109,8 +181,9 @@ namespace jrmwng
 			}
 		};
 		template <>
-		struct simd_string<__m128i, char32_t>
+		class simd_string<__m128i, char32_t>
 		{
+		protected:
 			__m128i m_xmm;
 
 			simd_string(simd_string const & that)
@@ -139,13 +212,13 @@ namespace jrmwng
 				int const nCmpEq = _mm_movemask_epi8(l4CmpEq);
 				return nCmpEq == 0xFFFF;
 			}
-
-			operator char32_t const * () const
+		public:
+			char32_t const * c_str() const
 			{
 				return reinterpret_cast<char32_t const*>(m_xmm.m128i_i32);
 			}
 
-			int index_of(char32_t cPattern) const
+			int find(char32_t cPattern) const
 			{
 				__m128i const l4Pattern = _mm_set1_epi32(cPattern);
 				__m128i const l4This = m_xmm;
@@ -156,8 +229,9 @@ namespace jrmwng
 			}
 		};
 		template <>
-		struct simd_string<__m256i, char>
+		class simd_string<__m256i, char>
 		{
+		protected:
 			__m256i m_ymm;
 
 			simd_string(simd_string const & that)
@@ -186,13 +260,13 @@ namespace jrmwng
 				int const nCmpEq = _mm256_movemask_epi8(b32CmpEq);
 				return ~nCmpEq == 0;
 			}
-
-			operator char const * () const
+		public:
+			char const * c_str() const
 			{
 				return m_ymm.m256i_i8;
 			}
 
-			int index_of(char cPattern) const
+			int find(char cPattern) const
 			{
 				__m256i const b32This = m_ymm;
 				__m256i const b32Pattern = _mm256_set1_epi8(cPattern);
@@ -205,19 +279,23 @@ namespace jrmwng
 	}
 	template <typename Tmm, typename Tchar>
 	class simd_string
-		: detail::simd_string<Tmm, Tchar>
+		: public detail::simd_string<Tmm, Tchar>
 	{
 		using base_t = detail::simd_string<Tmm, Tchar>;
 	public:
 		simd_string(Tchar const *pc)
 			: base_t(pc)
 		{}
-		bool operator < (simd_string const & that) const
+		int compare(simd_string const & that) const
 		{
 			//       [1 2 3 ...]
 			//       [1 3 2 ...]
 			// cmplt [0 1 0 ...]
 			// cmpgt [0 0 1 ...]
+			return cmplt(that) - that.cmplt(*this);
+		}
+		bool operator < (simd_string const & that) const
+		{
 			return cmplt(that) < that.cmplt(*this);
 		}
 		bool operator <= (simd_string const & that) const
@@ -241,25 +319,15 @@ namespace jrmwng
 			return cmplt(that) > that.cmplt(*this);
 		}
 
-		operator Tchar const * () const
-		{
-			return base_t::operator Tchar const *();
-		}
-
-		template <typename Targ>
-		int index_of(Targ && arg) const
-		{
-			return base_t::index_of(std::forward<Targ>(arg));
-		}
 		int length() const
 		{
-			return base_t::index_of(Tchar(0));
+			return base_t::find(Tchar(0));
 		}
 	};
 	template <typename Tmm>
 	std::ostream & operator << (std::ostream & os, simd_string<Tmm, char> const & str)
 	{
-		return os << static_cast<char const*>(str);
+		return os << str.c_str();
 	}
 
 	template <typename Tchar>
