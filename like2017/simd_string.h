@@ -1,6 +1,7 @@
 #pragma once
 
 #include <intrin.h>
+#include <string>
 
 namespace jrmwng
 {
@@ -19,8 +20,9 @@ namespace jrmwng
 				: m_xmm(that.m_xmm)
 			{}
 			simd_string(char const *pc)
+				: m_xmm(_mm_setzero_si128())
 			{
-				std::char_traits<char>::_Copy_s(m_xmm.m128i_i8, 16, pc, 15);
+				std::char_traits<char>::copy(m_xmm.m128i_i8, pc, std::min<size_t>(15, std::char_traits<char>::length(pc)));
 			}
 
 			int cmplt(simd_string const & that) const
@@ -141,7 +143,7 @@ namespace jrmwng
 			simd_string(char16_t const *pc)
 				: m_xmm(_mm_setzero_si128())
 			{
-				std::char_traits<char16_t>::_Copy_s(reinterpret_cast<char16_t*>(m_xmm.m128i_i16), 8, pc, 7);
+				std::char_traits<char16_t>::copy(reinterpret_cast<char16_t*>(m_xmm.m128i_i16), pc, std::min<size_t>(7, std::char_traits<char16_t>::length(pc)));
 			}
 
 			int cmplt(simd_string const & that) const
@@ -192,7 +194,7 @@ namespace jrmwng
 			simd_string(char32_t const *pc)
 				: m_xmm(_mm_setzero_si128())
 			{
-				std::char_traits<char32_t>::_Copy_s(reinterpret_cast<char32_t*>(m_xmm.m128i_i32), 4, pc, 3);
+				std::char_traits<char32_t>::copy(reinterpret_cast<char32_t*>(m_xmm.m128i_u32), pc, std::min<size_t>(3, std::char_traits<char32_t>::length(pc)));
 			}
 
 			int cmplt(simd_string const & that) const
@@ -240,7 +242,7 @@ namespace jrmwng
 			simd_string(char const *pc)
 				: m_ymm(_mm256_setzero_si256())
 			{
-				std::char_traits<char>::_Copy_s(m_ymm.m256i_i8, 32, pc, 31);
+				std::char_traits<char>::copy(m_ymm.m256i_i8, pc, std::min<size_t>(31, std::char_traits<char>::length(pc)));
 			}
 
 			int cmplt(simd_string const & that) const
