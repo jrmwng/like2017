@@ -648,14 +648,66 @@ namespace jrmwng
 			}
 			decltype(auto) element_at_or_default(size_t uIndex) const
 			{
+				using Treturn = std::decay_t<decltype(*Tcontainer::begin())>;
+
 				for (auto it = Tcontainer::begin(), itEnd = Tcontainer::end(); it != itEnd; ++it)
 				{
 					if (uIndex-- == 0)
 					{
-						return *it;
+						return Treturn(*it);
 					}
 				}
-				return decltype(*it)();
+				return Treturn();
+			}
+			template <typename Tfunc>
+			decltype(auto) first(Tfunc && func) const
+			{
+				auto const itBegin = Tcontainer::begin();
+				auto const itEnd = Tcontainer::end();
+
+				auto const it = std::find_if(itBegin, itEnd, std::forward<Tfunc>(func));
+
+				if (it != itEnd)
+				{
+					return *it;
+				}
+				else
+				{
+					throw std::exception();
+				}
+			}
+			decltype(auto) first() const
+			{
+				return first([](auto const &)
+				{
+					return true;
+				});
+			}
+			template <typename Tfunc>
+			decltype(auto) first_or_default(Tfunc && func) const
+			{
+				using Treturn = std::decay_t<decltype(*Tcontainer::begin())>;
+
+				auto const itBegin = Tcontainer::begin();
+				auto const itEnd = Tcontainer::end();
+
+				auto const it = std::find_if(itBegin, itEnd, std::forward<Tfunc>(func));
+
+				if (it != itEnd)
+				{
+					return Treturn(*it);
+				}
+				else
+				{
+					return Treturn();
+				}
+			}
+			decltype(auto) first_or_default() const
+			{
+				return first_or_default([](auto const &)
+				{
+					return true;
+				});
 			}
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
@@ -703,6 +755,20 @@ namespace jrmwng
 			{
 				using Tvalue = std::decay_t<decltype(*that.begin())>;
 				return except(that, std::equal_to<Tvalue>());
+			}
+			template <typename Tthat_container, typename Tequal>
+			decltype(auto) intersection(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual) const
+			{
+				return skip_while([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
+				{
+					return !std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
+				});
+			}
+			template <typename Tthat_container>
+			decltype(auto) intersection(linq_enumerable<Tthat_container> const & that) const
+			{
+				using Tvalue = std::decay_t<decltype(*that.begin())>;
+				return intersection(that, std::equal_to<Tvalue>());
 			}
 			template <typename Tfunc>
 			decltype(auto) skip_while(Tfunc && func) const

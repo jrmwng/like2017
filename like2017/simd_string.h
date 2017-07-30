@@ -16,6 +16,9 @@ namespace jrmwng
 		protected:
 			__m128i m_xmm;
 
+			simd_string()
+				: m_xmm(_mm_setzero_si128())
+			{}
 			simd_string(simd_string const & that)
 				: m_xmm(that.m_xmm)
 			{}
@@ -137,6 +140,9 @@ namespace jrmwng
 		protected:
 			__m128i m_xmm;
 
+			simd_string()
+				: m_xmm(_mm_setzero_si128())
+			{}
 			simd_string(simd_string const & that)
 				: m_xmm(that.m_xmm)
 			{}
@@ -188,6 +194,9 @@ namespace jrmwng
 		protected:
 			__m128i m_xmm;
 
+			simd_string()
+				: m_xmm(_mm_setzero_si128())
+			{}
 			simd_string(simd_string const & that)
 				: m_xmm(that.m_xmm)
 			{}
@@ -236,6 +245,9 @@ namespace jrmwng
 		protected:
 			__m256i m_ymm;
 
+			simd_string()
+				: m_ymm(_mm256_setzero_si256())
+			{}
 			simd_string(simd_string const & that)
 				: m_ymm(that.m_ymm)
 			{}
@@ -285,6 +297,8 @@ namespace jrmwng
 	{
 		using base_t = detail::simd_string<Tmm, Tchar>;
 	public:
+		simd_string()
+		{}
 		simd_string(Tchar const *pc)
 			: base_t(pc)
 		{}
