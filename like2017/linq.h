@@ -254,6 +254,10 @@ namespace jrmwng
 				using Trange_enumerable = linq_enumerable<Trange>;
 				return Trange_enumerable(m_itCurrent, m_itNext);
 			}
+			decltype(auto) key() const
+			{
+				return std::get<0>(m_params)(*m_itCurrent);
+			}
 			Titerator begin() const
 			{
 				return m_itCurrent;
@@ -267,6 +271,7 @@ namespace jrmwng
 		class linq_order_by_iterator
 			: public linq_iterator<Titerator>
 		{
+			Titerator m_itNext;
 			Titerator const m_itBegin;
 			Titerator const m_itEnd;
 			Tparams const m_params;
@@ -274,59 +279,88 @@ namespace jrmwng
 			template <typename Tcontainer>
 			linq_order_by_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
+				, m_itNext(container.end())
 				, m_itBegin(container.begin())
 				, m_itEnd(container.end())
 				, m_params(std::forward<Tparams>(params))
 			{
 				if (m_itCurrent != m_itEnd)
 				{
-					m_itCurrent = std::min_element(m_itBegin, m_itEnd, [this](auto const & left, auto const & right)
+					auto const & fnGet = std::get<0>(m_params);
+					auto const & fnLess = std::get<1>(m_params);
+
+					Titerator itMin = m_itCurrent;
+					Titerator itNext = m_itCurrent;
 					{
-						return std::get<1>(m_params)(
-							std::get<0>(m_params)(left),
-							std::get<0>(m_params)(right));
-					});
-					for (auto it = m_itBegin; it != itCurrent; ++it)
-					{
-						++*this;
+						auto valueMin = *itMin;
+						auto valueNext = valueMin; // *itNext;
+
+						for (Titerator it = itMin; it != m_itEnd; ++it)
+						{
+							auto const value = *it;
+
+							if (fnLess(value, valueMin))
+							{
+								valueNext = std::exchange(valueMin, value);
+								itNext = std::exchange(itMin, it);
+							}
+							else if (fnLess(valueMin, value) == fnLess(value, valueNext))
+							{
+								valueNext = value;
+								itNext = it;
+							}
+						}
 					}
+					m_itCurrent = itMin;
+					m_itNext    = itNext;
 				}
 			}
 			linq_order_by_iterator & operator = (linq_order_by_iterator const & that)
 			{
 				m_itCurrent = that.m_itCurrent;
+				m_itNext    = that.m_itNext;
 				return *this;
 			}
 			linq_order_by_iterator & operator ++ ()
 			{
 				auto const & fnGet = std::get<0>(m_params);
-				auto const & fnCompare = std::get<1>(m_params);
+				auto const & fnLess = std::get<1>(m_params);
 				auto const valueKey = fnGet(*m_itCurrent);
+				auto valueNext = fnGet(*m_itNext);
 
-				for (Titerator itCurrent = m_itCurrent; ++itCurrent != m_itEnd; )
+				while (++m_itCurrent != m_itEnd)
 				{
-					auto valueCurrent = fnGet(*itCurrent);
+					auto const valueCurrent = fnGet(*m_itCurrent);
 
-					if (fnCompare(valueKey, valueCurrent) == fnCompare(valueCurrent, valueKey))
+					if (fnLess(valueKey, valueCurrent) == fnLess(valueCurrent, valueKey))
 					{
-						m_itCurrent = itCurrent;
 						return *this;
 					}
+					if ((fnLess(valueKey, valueCurrent) == fnLess(valueKey, valueNext)) == fnLess(valueCurrent, valueNext))
+					{
+						valueNext = valueCurrent;
+						m_itNext = m_itCurrent;
+					}
 				}
-				Titerator itCurrent = std::min_element(m_itBegin, m_itEnd, [&, this](auto const & left, auto const & right)
-				{
-					auto const valueLeft = fnGet(left);
-					auto const valueRight = fnGet(right);
 
-					return (fnCompare(valueKey, valueLeft) == fnCompare(valueKey, valueRight)) == fnCompare(valueLeft, valueRight);
-				});
-				if (fnCompare(valueKey, fnGet(*itCurrent)))
+				if (fnLess(valueKey, valueNext))
 				{
-					m_itCurrent = itCurrent;
-				}
-				else
-				{
-					m_itCurrent = m_itEnd;
+					Titerator itNextNext = m_itNext;
+					{
+						auto valueNextNext = valueNext;
+
+						for (Titerator itCurrent = m_itBegin; itCurrent != m_itNext; ++itCurrent)
+						{
+							auto const valueCurrent = fnGet(*itCurrent);
+
+							if ((fnLess(valueNext, valueCurrent) == fnLess(valueNext, valueNextNext)) == fnLess(valueCurrent, valueNextNext))
+							{
+								itNextNext = itCurrent;
+								valueNextNext = valueCurrent;
+							}
+						}
+					}
+					m_itCurrent = std::exchange(m_itNext, itNextNext);
 				}
 				return *this;
 			}
@@ -397,14 +431,14 @@ namespace jrmwng
 			{}
 
 			template <typename Tvalue, typename Taccumulate>
-			decltype(auto) aggregate(Tvalue value, Taccumulate && fnAccumulate) const
+			decltype(auto) aggregate(Tvalue && value, Taccumulate && fnAccumulate) const
 			{
 				using Titerator = decltype(Tcontainer::begin());
 				using Tparams = std::tuple<Tvalue, Taccumulate>;
 				using Taccumulate_iterator = linq_group_accumulate_iterator<Titerator, Tparams>;
 				using Taccumulate_container = linq_container<linq_group<Tcontainer>, Tparams, Taccumulate_iterator>;
 				using Taccumulate_enumerable = linq_enumerable<Taccumulate_container>;
-				return Taccumulate_enumerable(linq_group<Tcontainer>(*this), Tparams(value, std::forward<Taccumulate>(fnAccumulate)));
+				return Taccumulate_enumerable(linq_group<Tcontainer>(*this), Tparams(std::forward<Tvalue>(value), std::forward<Taccumulate>(fnAccumulate)));
 			}
 			template <typename Tget>
 			decltype(auto) count(Tget && fnGet) const
