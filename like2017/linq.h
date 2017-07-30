@@ -394,44 +394,38 @@ namespace jrmwng
 			}
 		};
 
-		template <typename Titerator, typename Tparams>
-		class linq_except_iterator
+		template <typename Titerator, typename Tfunc>
+		class linq_skip_while_iterator
 			: public linq_iterator<Titerator>
 		{
 			Titerator const m_itEnd;
-			Tparams const m_params;
+			Tfunc const m_func;
 		public:
 			template <typename Tcontainer>
-			linq_except_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
+			linq_skip_while_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc && func)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_itEnd(container.end())
-				, m_params(std::forward<Tparams>(params))
+				, m_func(std::forward<Tfunc>(func))
 			{
 				for (; m_itCurrent != m_itEnd; ++m_itCurrent)
 				{
-					if (!std::any_of(std::get<0>(m_params), std::get<1>(m_params), [&](auto const & valueThat)
-					{
-						return std::get<2>(m_params)(*m_itCurrent, valueThat);
-					}))
+					if (!m_func(*m_itCurrent))
 					{
 						break;
 					}
 				}
 			}
-			linq_except_iterator & operator = (linq_except_iterator const & that)
+			linq_skip_while_iterator & operator = (linq_skip_while_iterator const & that)
 			{
 				m_itCurrent = that.m_itCurrent;
 				return *this;
 			}
-			linq_except_iterator & operator ++ ()
+			linq_skip_while_iterator & operator ++ ()
 			{
 				++m_itCurrent;
 				for (; m_itCurrent != m_itEnd; ++m_itCurrent)
 				{
-					if (!std::any_of(std::get<0>(m_params), std::get<1>(m_params), [&](auto const & valueThat)
-					{
-						return std::get<2>(m_params)(*m_itCurrent, valueThat);
-					}))
+					if (!m_func(*m_itCurrent))
 					{
 						break;
 					}
@@ -699,19 +693,25 @@ namespace jrmwng
 			template <typename Tthat_container, typename Tequal>
 			decltype(auto) except(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual) const
 			{
-				using Titerator = decltype(Tcontainer::begin());
-				using Tthat_iterator = decltype(that.begin());
-				using Tparams = std::tuple<Tthat_iterator, Tthat_iterator, Tequal>;
-				using Texcept_iterator = linq_except_iterator<Titerator, Tparams>;
-				using Texcept_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Texcept_iterator>;
-				using Texcept_enumerable = linq_enumerable<Texcept_container>;
-				return Texcept_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(that.begin(), that.end(), std::forward<Tequal>(fnEqual)));
+				return skip_while([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
+				{
+					return std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
+				});
 			}
 			template <typename Tthat_container>
 			decltype(auto) except(linq_enumerable<Tthat_container> const & that) const
 			{
 				using Tvalue = std::decay_t<decltype(*that.begin())>;
 				return except(that, std::equal_to<Tvalue>());
+			}
+			template <typename Tfunc>
+			decltype(auto) skip_while(Tfunc && func) const
+			{
+				using Titerator = decltype(Tcontainer::begin());
+				using Tskip_while_iterator = linq_skip_while_iterator<Titerator, Tfunc>;
+				using Tskip_while_container = linq_container<linq_enumerable<Tcontainer>, Tfunc, Tskip_while_iterator>;
+				using Tskip_while_enumerable = linq_enumerable<Tskip_while_container>;
+				return Tskip_while_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tfunc>(func));
 			}
 			template <typename Tfunc>
 			decltype(auto) select(Tfunc && func) const
