@@ -395,6 +395,52 @@ namespace jrmwng
 		};
 
 		template <typename Titerator, typename Tparams>
+		class linq_except_iterator
+			: public linq_iterator<Titerator>
+		{
+			Titerator const m_itEnd;
+			Tparams const m_params;
+		public:
+			template <typename Tcontainer>
+			linq_except_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
+				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
+				, m_itEnd(container.end())
+				, m_params(std::forward<Tparams>(params))
+			{
+				for (; m_itCurrent != m_itEnd; ++m_itCurrent)
+				{
+					if (!std::any_of(std::get<0>(m_params), std::get<1>(m_params), [&](auto const & valueThat)
+					{
+						return std::get<2>(m_params)(*m_itCurrent, valueThat);
+					}))
+					{
+						break;
+					}
+				}
+			}
+			linq_except_iterator & operator = (linq_except_iterator const & that)
+			{
+				m_itCurrent = that.m_itCurrent;
+				return *this;
+			}
+			linq_except_iterator & operator ++ ()
+			{
+				++m_itCurrent;
+				for (; m_itCurrent != m_itEnd; ++m_itCurrent)
+				{
+					if (!std::any_of(std::get<0>(m_params), std::get<1>(m_params), [&](auto const & valueThat)
+					{
+						return std::get<2>(m_params)(*m_itCurrent, valueThat);
+					}))
+					{
+						break;
+					}
+				}
+				return *this;
+			}
+		};
+
+		template <typename Titerator, typename Tparams>
 		class linq_group_accumulate_iterator
 			: public linq_iterator<Titerator>
 		{
@@ -595,6 +641,28 @@ namespace jrmwng
 					return true;
 				});
 			}
+			decltype(auto) element_at(size_t uIndex) const
+			{
+				for (auto it = Tcontainer::begin(), itEnd = Tcontainer::end(); it != itEnd; ++it)
+				{
+					if (uIndex-- == 0)
+					{
+						return *it;
+					}
+				}
+				throw std::exception();
+			}
+			decltype(auto) element_at_or_default(size_t uIndex) const
+			{
+				for (auto it = Tcontainer::begin(), itEnd = Tcontainer::end(); it != itEnd; ++it)
+				{
+					if (uIndex-- == 0)
+					{
+						return *it;
+					}
+				}
+				return decltype(*it)();
+			}
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
 			{
@@ -626,6 +694,24 @@ namespace jrmwng
 				using Tconcat_container = linq_concat_container<linq_enumerable<Tcontainer>, linq_enumerable<Tcontainer1>, Tconcat_iterator>;
 				using Tconcat_enumerable = linq_enumerable<Tconcat_container>;
 				return Tconcat_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<linq_enumerable<Tcontainer1>>(container1));
+			}
+			// TODO: distinct
+			template <typename Tthat_container, typename Tequal>
+			decltype(auto) except(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual) const
+			{
+				using Titerator = decltype(Tcontainer::begin());
+				using Tthat_iterator = decltype(that.begin());
+				using Tparams = std::tuple<Tthat_iterator, Tthat_iterator, Tequal>;
+				using Texcept_iterator = linq_except_iterator<Titerator, Tparams>;
+				using Texcept_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Texcept_iterator>;
+				using Texcept_enumerable = linq_enumerable<Texcept_container>;
+				return Texcept_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(that.begin(), that.end(), std::forward<Tequal>(fnEqual)));
+			}
+			template <typename Tthat_container>
+			decltype(auto) except(linq_enumerable<Tthat_container> const & that) const
+			{
+				using Tvalue = std::decay_t<decltype(*that.begin())>;
+				return except(that, std::equal_to<Tvalue>());
 			}
 			template <typename Tfunc>
 			decltype(auto) select(Tfunc && func) const
