@@ -151,6 +151,53 @@ namespace jrmwng
 				return *this;
 			}
 		};
+		template <typename Titerator, typename Tmany_iterator, typename Tparams>
+		class linq_select_many_iterator
+			: public linq_iterator<Titerator>
+		{
+			Tmany_iterator m_itManyCurrent;
+			Tmany_iterator m_itManyEnd;
+			Titerator const m_itEnd;
+			Tparams const m_params;
+		public:
+			template <typename Tcontainer>
+			linq_select_many_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
+				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
+				, m_itEnd(container.end())
+				, m_params(std::forward<Tparams>(params))
+			{
+				if (m_itCurrent != m_itEnd)
+				{
+					auto const valueCurrent = std::get<0>(m_params)(*m_itCurrent);
+					m_itManyCurrent = valueCurrent.begin();
+					m_itManyEnd = valueCurrent.end();
+				}
+			}
+			decltype(auto) operator * () const
+			{
+				return std::get<1>(m_params)(*m_itCurrent, *m_itManyCurrent);
+			}
+			linq_select_many_iterator & operator = (linq_select_many_iterator const & that)
+			{
+				m_itCurrent = that.m_itCurrent;
+				m_itManyCurrent = that.m_itManyCurrent;
+				m_itManyEnd = that.m_itManyEnd;
+				return *this;
+			}
+			linq_select_many_iterator & operator ++ ()
+			{
+				if (++m_itManyCurrent == m_itManyEnd)
+				{
+					if (++m_itCurrent != m_itEnd)
+					{
+						auto const valueCurrent = std::get<0>(m_params)(*m_itCurrent);
+						m_itManyCurrent = valueCurrent.begin();
+						m_itManyEnd = valueCurrent.end();
+					}
+				}
+				return *this;
+			}
+		};
 		template <typename Titerator, typename Tfunc>
 		class linq_where_iterator
 			: public linq_iterator<Titerator>
@@ -853,6 +900,25 @@ namespace jrmwng
 				using Tselect_container = linq_container<linq_enumerable<Tcontainer>, Tfunc, Tselect_iterator>;
 				using Tselect_enumerable = linq_enumerable<Tselect_container>;
 				return Tselect_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tfunc>(func));
+			}
+			template <typename Tmany, typename Tselect>
+			decltype(auto) select_many(Tmany && fnMany, Tselect && fnSelect) const
+			{
+				using Titerator = decltype(Tcontainer::begin());
+				using Tmany_iterator = decltype(fnMany(*Tcontainer::begin()).begin());
+				using Tparams = std::tuple<Tmany, Tselect>;
+				using Tselect_many_iterator = linq_select_many_iterator<Titerator, Tmany_iterator, Tparams>;
+				using Tselect_many_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Tselect_many_iterator>;
+				using Tselect_many_enumerable = linq_enumerable<Tselect_many_container>;
+				return Tselect_many_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(std::forward<Tmany>(fnMany), std::forward<Tselect>(fnSelect)));
+			}
+			template <typename Tmany>
+			decltype(auto) select_many(Tmany && fnMany) const
+			{
+				return select_many(std::forward<Tmany>(fnMany), [](auto, auto objMany)
+				{
+					return objMany;
+				});
 			}
 			template <typename Tfunc>
 			decltype(auto) where(Tfunc && func) const
