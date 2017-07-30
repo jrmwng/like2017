@@ -757,6 +757,24 @@ namespace jrmwng
 					return true;
 				});
 			}
+			template <typename Tless>
+			decltype(auto) max(Tless && fnLess) const
+			{
+				return *std::max_element(Tcontainer::begin(), Tcontainer::end(), std::forward<Tless>(fnLess));
+			}
+			decltype(auto) max() const
+			{
+				return *std::max_element(Tcontainer::begin(), Tcontainer::end());
+			}
+			template <typename Tless>
+			decltype(auto) min(Tless && fnLess) const
+			{
+				return *std::min_element(Tcontainer::begin(), Tcontainer::end(), std::forward<Tless>(fnLess));
+			}
+			decltype(auto) min() const
+			{
+				return *std::min_element(Tcontainer::begin(), Tcontainer::end());
+			}
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
 			{
