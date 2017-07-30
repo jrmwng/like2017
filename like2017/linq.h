@@ -420,18 +420,6 @@ namespace jrmwng
 				m_itCurrent = that.m_itCurrent;
 				return *this;
 			}
-			linq_skip_while_iterator & operator ++ ()
-			{
-				++m_itCurrent;
-				for (; m_itCurrent != m_itEnd; ++m_itCurrent)
-				{
-					if (!m_func(*m_itCurrent))
-					{
-						break;
-					}
-				}
-				return *this;
-			}
 		};
 
 		template <typename Titerator, typename Tparams>
@@ -709,6 +697,66 @@ namespace jrmwng
 					return true;
 				});
 			}
+			template <typename Tfunc>
+			decltype(auto) last(Tfunc && func) const
+			{
+				auto const itBegin = Tcontainer::begin();
+				auto const itEnd = Tcontainer::end();
+
+				auto itReturn = std::find_if(itBegin, itEnd, func);
+				{
+					if (itReturn == itEnd)
+					{
+						throw std::exception();
+					}
+					for (auto it = itReturn; ++it != itEnd; )
+					{
+						if (func(*it))
+						{
+							itReturn = it;
+						}
+					}
+				}
+				return *itReturn;
+			}
+			decltype(auto) last() const
+			{
+				return last([](auto const &)
+				{
+					return true;
+				});
+			}
+			template <typename Tfunc>
+			decltype(auto) last_or_default(Tfunc && func) const
+			{
+				using Treturn = std::decay_t<decltype(*Tcontainer::begin())>;
+
+				auto const itBegin = Tcontainer::begin();
+				auto const itEnd = Tcontainer::end();
+
+				auto itReturn = std::find_if(itBegin, itEnd, func);
+				{
+					if (itReturn == itEnd)
+					{
+						return Treturn();
+					}
+					for (auto it = itReturn; ++it != itEnd; )
+					{
+						if (func(*it))
+						{
+							itReturn = it;
+						}
+					}
+				}
+				return Treturn(*itReturn);
+			}
+			decltype(auto) last_or_default() const
+			{
+				return last_or_default([](auto const &)
+				{
+					return true;
+				});
+			}
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
 			{
@@ -745,9 +793,9 @@ namespace jrmwng
 			template <typename Tthat_container, typename Tequal>
 			decltype(auto) except(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual) const
 			{
-				return skip_while([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
+				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
 				{
-					return std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
+					return !std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
 				});
 			}
 			template <typename Tthat_container>
@@ -759,9 +807,9 @@ namespace jrmwng
 			template <typename Tthat_container, typename Tequal>
 			decltype(auto) intersection(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual) const
 			{
-				return skip_while([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
+				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
 				{
-					return !std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
+					return std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
 				});
 			}
 			template <typename Tthat_container>
