@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>Jeremy Cally Bianca Summon Rebecca Jovie Irene Spencer Eva Samson Ann Michelle Andy Gloria Ernest</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>Jeremy Cally Bianca Summon Rebecca Jovie Irene Spencer Eva Samson Ann Michelle Andy Gloria Ernest Jeremy</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>Jeremy Cally Bianca Summon Rebecca Jovie Irene Spencer Eva Samson Ann Michelle Andy Gloria Ernest</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>Jeremy Cally Bianca Summon Rebecca Jovie Irene Spencer Eva Samson Ann Michelle Andy Gloria Ernest Jeremy</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>Jeremy Cally Bianca Summon Rebecca Jovie Irene Spencer Eva Samson Ann Michelle Andy Gloria Ernest</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>Jeremy Cally Bianca Summon Rebecca Jovie Irene Spencer Eva Samson Ann Michelle Andy Gloria Ernest Jeremy</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>Jeremy Cally Bianca Summon Rebecca Jovie Irene Spencer Eva Samson Ann Michelle Andy Gloria Ernest</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>Jeremy Cally Bianca Summon Rebecca Jovie Irene Spencer Eva Samson Ann Michelle Andy Gloria Ernest Jeremy</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>
