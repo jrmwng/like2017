@@ -646,7 +646,7 @@ namespace jrmwng
 				return average<Treturn>(std::identity<Tvalue>());
 			}
 			template <typename Tvalue, typename Tfunc>
-			bool contains(Tvalue const & value, Tfunc && fnEqual) const
+			bool contains(Tvalue value, Tfunc && fnEqual) const
 			{
 				return any([value, fnEqual](auto const & obj)
 				{
