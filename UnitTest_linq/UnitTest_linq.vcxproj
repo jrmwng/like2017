@@ -157,6 +157,7 @@
     <ClCompile Include="unittest_linq_any.cpp" />
     <ClCompile Include="unittest_linq_concat.cpp" />
     <ClCompile Include="unittest_linq_count.cpp" />
+    <ClCompile Include="unittest_linq_except.cpp" />
     <ClCompile Include="unittest_linq_from.cpp" />
     <ClCompile Include="unittest_linq_element.cpp" />
     <ClCompile Include="unittest_linq_order_by.cpp" />

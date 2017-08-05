@@ -884,19 +884,20 @@ namespace jrmwng
 				return Tconcat_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tlinq_container1>(linqContainer1));
 			}
 			// TODO: distinct
-			template <typename Tthat_container, typename Tequal>
-			decltype(auto) except(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual) const
+			template <typename Tthat, typename Tequal>
+			decltype(auto) except(Tthat && that, Tequal && fnEqual) const
 			{
-				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
+				auto linqThat = from(std::forward<Tthat>(that));
+				return where([itBegin = linqThat.begin(), itEnd = linqThat.end(), fnEqual](auto const & valueCurrent)
 				{
 					return !std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
 				});
 			}
-			template <typename Tthat_container>
-			decltype(auto) except(linq_enumerable<Tthat_container> const & that) const
+			template <typename Tthat>
+			decltype(auto) except(Tthat && that) const
 			{
-				using Tvalue = std::decay_t<decltype(*that.begin())>;
-				return except(that, std::equal_to<Tvalue>());
+				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				return except(std::forward<Tthat>(that), std::equal_to<Tvalue>());
 			}
 			template <typename Tthat_container, typename Tequal>
 			decltype(auto) intersection(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual) const
