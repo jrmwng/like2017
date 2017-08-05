@@ -4,13 +4,13 @@
 LINQ alike query interface written in C++ template
 
     for (auto tupleNameAddress : jrmwng::linq::from(vectorStudent)
-        .where([](auto const & student)
-        {
-            return student.gender == 'M';
-        })
         .order_by([](auto const & student)
         {
             return student.name;
+        })
+        .where([](auto const & student)
+        {
+            return student.gender == 'M';
         })
         .select([](auto const & student)
         {
