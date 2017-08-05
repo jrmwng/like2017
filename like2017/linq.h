@@ -654,7 +654,7 @@ namespace jrmwng
 				});
 			}
 			template <typename Tvalue>
-			bool contains(Tvalue const & value) const
+			bool contains(Tvalue value) const
 			{
 				return contains(value, std::equal_to<Tvalue>());
 			}
