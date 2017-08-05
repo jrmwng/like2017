@@ -823,9 +823,9 @@ namespace jrmwng
 				return *std::min_element(Tcontainer::begin(), Tcontainer::end());
 			}
 			template <typename Tthat, typename Tequal>
-			bool sequential_equal(Tthat const & that, Tequal && fnEqual)
+			bool sequential_equal(Tthat && that, Tequal && fnEqual)
 			{
-				auto const linqThat = from(that);
+				auto const linqThat = from(std::forward<Tthat>(that));
 				auto const itThisBegin = begin();
 				auto const itThisEnd = end();
 				auto const itThatBegin = linqThat.begin();
@@ -844,10 +844,10 @@ namespace jrmwng
 				return itThis == itThisEnd && itThat == itThatEnd;
 			}
 			template <typename Tthat>
-			bool sequential_equal(Tthat const & that)
+			bool sequential_equal(Tthat && that)
 			{
 				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
-				return sequential_equal(that, std::equal_to<Tvalue>());
+				return sequential_equal(std::forward<Tthat>(that), std::equal_to<Tvalue>());
 			}
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
