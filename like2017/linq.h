@@ -822,13 +822,14 @@ namespace jrmwng
 			{
 				return *std::min_element(Tcontainer::begin(), Tcontainer::end());
 			}
-			template <typename Tthat_container, typename Tequal>
-			bool sequential_equal(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual)
+			template <typename Tthat, typename Tequal>
+			bool sequential_equal(Tthat const & that, Tequal && fnEqual)
 			{
+				auto const linqThat = from(that);
 				auto const itThisBegin = begin();
 				auto const itThisEnd = end();
-				auto const itThatBegin = that.begin();
-				auto const itThatEnd = that.end();
+				auto const itThatBegin = linqThat.begin();
+				auto const itThatEnd = linqThat.end();
 				auto itThis = itThisBegin;
 				auto itThat = itThatBegin;
 				{
@@ -842,13 +843,11 @@ namespace jrmwng
 				}
 				return itThis == itThisEnd && itThat == itThatEnd;
 			}
-			template <typename Tthat_container>
-			bool sequential_equal(linq_enumerable<Tthat_container> const & that)
+			template <typename Tthat>
+			bool sequential_equal(Tthat const & that)
 			{
-				using Tthis_value = std::decay_t<decltype(*this->begin())>;
-				using Tthat_value = std::decay_t<decltype(*that .begin())>;
-				static_assert(std::is_convertible<Tthat_value, Tthis_value>::value, "Incompatible value types");
-				return sequential_equal(that, std::equal_to<Tthis_value>());
+				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				return sequential_equal(that, std::equal_to<Tvalue>());
 			}
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
@@ -874,13 +873,15 @@ namespace jrmwng
 				});
 			}
 			template <typename Tcontainer1>
-			decltype(auto) concat(linq_enumerable<Tcontainer1> && container1) const
+			decltype(auto) concat(Tcontainer1 && container1) const
 			{
+				auto linqContainer1 = from(std::forward<Tcontainer>(container1));
+				using Tlinq_container1 = std::decay_t<decltype(linqContainer1)>;
 				using Titerator = decltype(Tcontainer::begin());
 				using Tconcat_iterator = linq_concat_iterator<Titerator>;
-				using Tconcat_container = linq_concat_container<linq_enumerable<Tcontainer>, linq_enumerable<Tcontainer1>, Tconcat_iterator>;
+				using Tconcat_container = linq_concat_container<linq_enumerable<Tcontainer>, Tlinq_container1, Tconcat_iterator>;
 				using Tconcat_enumerable = linq_enumerable<Tconcat_container>;
-				return Tconcat_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<linq_enumerable<Tcontainer1>>(container1));
+				return Tconcat_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tlinq_container1>(linqContainer1));
 			}
 			// TODO: distinct
 			template <typename Tthat_container, typename Tequal>
@@ -996,6 +997,16 @@ namespace jrmwng
 			using Tfrom = linq_from<Tcontainer &>;
 
 			return linq_enumerable<Tfrom>(container);
+		}
+		template <typename Tcontainer>
+		linq_enumerable<Tcontainer> const & from(linq_enumerable<Tcontainer> const & that)
+		{
+			return that;
+		}
+		template <typename Tcontainer>
+		linq_enumerable<Tcontainer> && from(linq_enumerable<Tcontainer> && that)
+		{
+			return std::forward<linq_enumerable<Tcontainer>>(that);
 		}
 	}
 }

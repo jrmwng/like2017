@@ -18,9 +18,20 @@ namespace UnitTest_linq
 			std::vector<Tsimd_string> vectorName2({ "Cally", "Jeremy" });
 			std::vector<Tsimd_string> vectorName3({ "Jeremy" });
 
-			Assert::IsTrue(jrmwng::linq::from(vectorName0).sequential_equal(jrmwng::linq::from(vectorName1)));
-			Assert::IsFalse(jrmwng::linq::from(vectorName0).sequential_equal(jrmwng::linq::from(vectorName2)));
-			Assert::IsFalse(jrmwng::linq::from(vectorName0).sequential_equal(jrmwng::linq::from(vectorName3)));
+			Assert::IsTrue(jrmwng::linq::from(vectorName0)
+				.sequential_equal(jrmwng::linq::from(vectorName1)));
+			Assert::IsTrue(jrmwng::linq::from(vectorName0)
+				.sequential_equal(vectorName1));
+
+			Assert::IsFalse(jrmwng::linq::from(vectorName0)
+				.sequential_equal(jrmwng::linq::from(vectorName2)));
+			Assert::IsFalse(jrmwng::linq::from(vectorName0)
+				.sequential_equal(vectorName2));
+
+			Assert::IsFalse(jrmwng::linq::from(vectorName0)
+				.sequential_equal(jrmwng::linq::from(vectorName3)));
+			Assert::IsFalse(jrmwng::linq::from(vectorName0)
+				.sequential_equal(vectorName3));
 		}
 
 	};

@@ -15,10 +15,16 @@ namespace UnitTest_linq
 
 			std::vector<Tsimd_string> vectorName0({ "Jeremy", "Cally" });
 			std::vector<Tsimd_string> vectorName1({ "Cally", "Jeremy" });
-			auto const enumName2 = jrmwng::linq::from(vectorName0).order_by(std::identity<Tsimd_string>());
-			std::vector<Tsimd_string> vectorName2(enumName2.begin(), enumName2.end());
 
-			Assert::IsFalse(std::inner_product(vectorName1.begin(), vectorName1.end(), vectorName2.begin(), false, std::bit_or<bool>(), std::not_equal_to<Tsimd_string>()));
+			Assert::IsTrue(jrmwng::linq::from(vectorName0).order_by(std::identity<Tsimd_string>())
+				.sequential_equal(vectorName1));
+			Assert::IsFalse(jrmwng::linq::from(vectorName1).order_by(std::identity<Tsimd_string>())
+				.sequential_equal(vectorName0));
+
+			Assert::IsTrue(jrmwng::linq::from(vectorName1).order_by(std::identity<Tsimd_string>(), std::greater<Tsimd_string>())
+				.sequential_equal(vectorName0));
+			Assert::IsFalse(jrmwng::linq::from(vectorName0).order_by(std::identity<Tsimd_string>(), std::greater<Tsimd_string>())
+				.sequential_equal(vectorName1));
 		}
 
 	};
