@@ -822,6 +822,34 @@ namespace jrmwng
 			{
 				return *std::min_element(Tcontainer::begin(), Tcontainer::end());
 			}
+			template <typename Tthat_container, typename Tequal>
+			bool sequential_equal(linq_enumerable<Tthat_container> const & that, Tequal && fnEqual)
+			{
+				auto const itThisBegin = begin();
+				auto const itThisEnd = end();
+				auto const itThatBegin = that.begin();
+				auto const itThatEnd = that.end();
+				auto itThis = itThisBegin;
+				auto itThat = itThatBegin;
+				{
+					for (; itThis != itThisEnd && itThat != itThatEnd; ++itThis, ++itThat)
+					{
+						if (fnEqual(*itThis, *itThat) == false)
+						{
+							return false;
+						}
+					}
+				}
+				return itThis == itThisEnd && itThat == itThatEnd;
+			}
+			template <typename Tthat_container>
+			bool sequential_equal(linq_enumerable<Tthat_container> const & that)
+			{
+				using Tthis_value = std::decay_t<decltype(*this->begin())>;
+				using Tthat_value = std::decay_t<decltype(*that .begin())>;
+				static_assert(std::is_convertible<Tthat_value, Tthis_value>::value, "Incompatible value types");
+				return sequential_equal(that, std::equal_to<Tthis_value>());
+			}
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
 			{

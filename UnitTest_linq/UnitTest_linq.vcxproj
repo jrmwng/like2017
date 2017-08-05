@@ -161,6 +161,7 @@
     <ClCompile Include="unittest_linq_element.cpp" />
     <ClCompile Include="unittest_linq_order_by.cpp" />
     <ClCompile Include="unittest_linq_select.cpp" />
+    <ClCompile Include="unittest_linq_sequential_equal.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
