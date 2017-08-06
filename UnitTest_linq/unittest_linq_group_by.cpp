@@ -26,6 +26,17 @@ namespace UnitTest_linq
 				return groupByLength.count();
 			})
 				.sequential_equal(vectorGroup1));
+
+			Assert::IsTrue(jrmwng::linq::from(vectorName0)
+				.group_by(std::identity<Tsimd_string>(), [](auto left, auto right)
+			{
+				return left.length() == right.length();
+			})
+				.select([](auto groupByLength)
+			{
+				return groupByLength.count();
+			})
+				.sequential_equal(vectorGroup1));
 		}
 
 	};
