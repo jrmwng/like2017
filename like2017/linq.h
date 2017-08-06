@@ -32,24 +32,24 @@ namespace jrmwng
 				return Titerator(m_container.end(), m_container, Tparams(m_params));
 			}
 		};
-		template <typename Tcontainer0, typename Tthat, typename Titerator>
+		template <typename Tcontainer0, typename Tcontainer1, typename Titerator>
 		class linq_concat_container
 		{
 			Tcontainer0 const m_container0;
-			Tthat const m_container1;
+			Tcontainer1 const m_container1;
 		public:
-			linq_concat_container(Tcontainer0 && container0, Tthat && container1)
+			linq_concat_container(Tcontainer0 && container0, Tcontainer1 && container1)
 				: m_container0(std::forward<Tcontainer0>(container0))
-				, m_container1(std::forward<Tthat>(container1))
+				, m_container1(std::forward<Tcontainer1>(container1))
 			{}
 
 			Titerator begin() const
 			{
-				return Titerator(m_container0.begin(), m_container0, m_container1);
+				return Titerator(m_container0.begin(), m_container1.begin(), m_container0, m_container1);
 			}
 			Titerator end() const
 			{
-				return Titerator(m_container1.end(), m_container0, m_container1);
+				return Titerator(m_container0.end(), m_container1.end(), m_container0, m_container1);
 			}
 		};
 
@@ -163,6 +163,8 @@ namespace jrmwng
 			template <typename Tcontainer>
 			linq_select_many_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
+				//, m_itManyCurrent(std::get<0>(params)(*m_itCurrent).begin())
+				//, m_itManyEnd(std::get<0>(params)(*m_itCurrent).end())
 				, m_itEnd(container.end())
 				, m_params(std::forward<Tparams>(params))
 			{
@@ -413,31 +415,58 @@ namespace jrmwng
 			}
 		};
 
-		template <typename Titerator>
+		template <typename Titerator0, typename Titerator1>
 		class linq_concat_iterator
-			: public linq_iterator<Titerator>
+			: public std::iterator_traits<Titerator0>
 		{
-			Titerator const m_itEnd0;
-			Titerator const m_itBegin1;
+			Titerator0 m_it0;
+			Titerator1 m_it1;
+			Titerator0 const m_itEnd0;
 		public:
-			template <typename Tcontainer0, typename Tthat>
-			linq_concat_iterator(Titerator && itCurrent, Tcontainer0 const & container0, Tthat const & container1)
-				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
+			typedef std::forward_iterator_tag iterator_category;
+
+			template <typename Tcontainer0, typename Tcontainer1>
+			linq_concat_iterator(Titerator0 && it0, Titerator1 && it1, Tcontainer0 const & container0, Tcontainer1 const & container1)
+				: m_it0(std::forward<Titerator0>(it0))
+				, m_it1(std::forward<Titerator1>(it1))
 				, m_itEnd0(container0.end())
-				, m_itBegin1(container1.begin())
 			{}
 			linq_concat_iterator & operator = (linq_concat_iterator const & that)
 			{
-				m_itCurrent = that.m_itCurrent;
+				m_it0 = that.m_it0;
+				m_it1 = that.m_it1;
 				return *this;
 			}
 			linq_concat_iterator & operator ++ ()
 			{
-				if (++m_itCurrent == m_itEnd0)
+				if (m_it0 != m_itEnd0)
 				{
-					m_itCurrent = m_itBegin1;
+					++m_it0;
+				}
+				else
+				{
+					++m_it1;
 				}
 				return *this;
+			}
+			decltype(auto) operator * () const
+			{
+				if (m_it0 != m_itEnd0)
+				{
+					return *m_it0;
+				}
+				else
+				{
+					return *m_it1;
+				}
+			}
+			bool operator == (linq_concat_iterator const & that) const
+			{
+				return m_it0 == that.m_it0 && m_it1 == that.m_it1;
+			}
+			bool operator != (linq_concat_iterator const & that) const
+			{
+				return m_it0 != that.m_it0 || m_it1 != that.m_it1;
 			}
 		};
 
@@ -777,8 +806,9 @@ namespace jrmwng
 			{
 				auto linqThat = from(std::forward<Tthat>(that));
 				using Tlinq_that = std::decay_t<decltype(linqThat)>;
-				using Titerator = decltype(Tcontainer::begin());
-				using Tconcat_iterator = linq_concat_iterator<Titerator>;
+				using Titerator0 = decltype(Tcontainer::begin());
+				using Titerator1 = decltype(linqThat.begin());
+				using Tconcat_iterator = linq_concat_iterator<Titerator0, Titerator1>;
 				using Tconcat_container = linq_concat_container<linq_enumerable<Tcontainer>, Tlinq_that, Tconcat_iterator>;
 				using Tconcat_enumerable = linq_enumerable<Tconcat_container>;
 				return Tconcat_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tlinq_that>(linqThat));
