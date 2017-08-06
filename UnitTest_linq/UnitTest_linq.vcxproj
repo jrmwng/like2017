@@ -165,6 +165,7 @@
     <ClCompile Include="unittest_linq_select.cpp" />
     <ClCompile Include="unittest_linq_sequential_equal.cpp" />
     <ClCompile Include="unittest_linq_skip_while.cpp" />
+    <ClCompile Include="unittest_linq_take_while.cpp" />
     <ClCompile Include="unittest_linq_where.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
