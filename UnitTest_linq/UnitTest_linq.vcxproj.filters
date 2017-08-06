@@ -68,5 +68,8 @@
     <ClCompile Include="unittest_linq_group_by.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="unittest_linq_select_many.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
