@@ -501,138 +501,6 @@ namespace jrmwng
 			}
 		};
 
-		template <typename Titerator, typename Tparams>
-		class linq_group_accumulate_iterator
-			: public linq_iterator<Titerator>
-		{
-			Tparams const m_params;
-		public:
-			template <typename Tcontainer>
-			linq_group_accumulate_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
-				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
-				, m_params(std::forward<Tparams>(params))
-			{}
-
-			decltype(auto) operator * () const
-			{
-				auto const itBegin = m_itCurrent.begin();
-				auto const itEnd = m_itCurrent.end();
-				return std::accumulate(itBegin, itEnd, std::get<0>(m_params)(*itBegin), std::get<1>(m_params));
-			}
-
-			linq_group_accumulate_iterator & operator = (linq_group_accumulate_iterator const & that)
-			{
-				m_itCurrent = that.m_itCurrent;
-				return *this;
-			}
-		};
-
-		template <typename Tcontainer>
-		class linq_group
-			: public Tcontainer
-		{
-		public:
-			template <typename... Targs>
-			linq_group(Targs && ... args)
-				: Tcontainer(std::forward<Targs>(args)...)
-			{}
-
-			template <typename Tvalue, typename Taccumulate>
-			decltype(auto) aggregate(Tvalue && value, Taccumulate && fnAccumulate) const
-			{
-				using Titerator = decltype(Tcontainer::begin());
-				using Tparams = std::tuple<Tvalue, Taccumulate>;
-				using Taccumulate_iterator = linq_group_accumulate_iterator<Titerator, Tparams>;
-				using Taccumulate_container = linq_container<linq_group<Tcontainer>, Tparams, Taccumulate_iterator>;
-				using Taccumulate_enumerable = linq_enumerable<Taccumulate_container>;
-				return Taccumulate_enumerable(linq_group<Tcontainer>(*this), Tparams(std::forward<Tvalue>(value), std::forward<Taccumulate>(fnAccumulate)));
-			}
-			template <typename Tget>
-			decltype(auto) count(Tget && fnGet) const
-			{
-				return aggregate(
-					[](auto const &)
-				{
-					return 0;
-				},
-					[fnGet](auto const accumulator, auto const & obj)
-				{
-					return accumulator + (fnGet(obj) ? 1 : 0);
-				});
-			}
-			template <typename Treturn, typename Tget>
-			Treturn sum(Tget && fnGet) const
-			{
-				return aggregate(
-					[](auto const &)
-				{
-					return Treturn(0);
-				},
-					[fnGet](Treturn const accumulator, auto const & obj)->Treturn
-				{
-					return static_cast<Treturn>(accumulator + fnGet(obj));
-				});
-			}
-			template <typename Treturn, typename Tget>
-			Treturn average(Tget && fnGet) const
-			{
-				using Tvalue = std::decay_t<decltype(std::forward<Tget>(fnGet)(*(*Tcontainer::begin()).begin()))>;
-
-				return aggregate(
-					[](auto const &)
-				{
-					return std::make_tuple(Treturn(0), 0);
-				},
-					[fnGet](auto const accumulator, auto const & obj)
-				{
-					return std::make_tuple(static_cast<Treturn>(std::get<0>(accumulator) + fnGet(obj)), std::get<1>(accumulator) + 1);
-				})
-					.select([](auto const & tuple)
-				{
-					return static_cast<Treturn>(std::get<0>(tuple) / std::get<1>(tuple));
-				});
-			}
-
-			template <typename Tget, typename Tcompare>
-			decltype(auto) min(Tget && fnGet, Tcompare && fnCompare) const
-			{
-				return aggregate(
-					[fnGet](auto const &obj)
-				{
-					return fnGet(obj);
-				},
-					[fnGet, fnCompare](auto const accumulator, auto const & obj)
-				{
-					return std::min(accumulator, fnGet(obj), fnCompare);
-				});
-			}
-			template <typename Tget>
-			decltype(auto) min(Tget && fnGet) const
-			{
-				using Tcompare = std::less<decltype(std::forward<Tget>(fnGet)(*(*Tcontainer::begin()).begin()))>;
-				return min(std::forward<Tget>(fnGet), Tcompare());
-			}
-			template <typename Tget, typename Tcompare>
-			decltype(auto) max(Tget && fnGet, Tcompare && fnCompare) const
-			{
-				return aggregate(
-					[fnGet](auto const &obj)
-				{
-					return fnGet(obj);
-				},
-					[fnGet, fnCompare](auto const accumulator, auto const & obj)
-				{
-					return std::max(accumulator, fnGet(obj), fnCompare);
-				});
-			}
-			template <typename Tget>
-			decltype(auto) max(Tget && fnGet) const
-			{
-				using Tcompare = std::less<decltype(std::forward<Tget>(fnGet)(*(*Tcontainer::begin()).begin()))>;
-				return max(std::forward<Tget>(fnGet), Tcompare());
-			}
-		};
-
 		template <typename Tcontainer>
 		class linq_enumerable
 			: public Tcontainer
@@ -1008,7 +876,7 @@ namespace jrmwng
 				using Titerator = decltype(Tcontainer::begin());
 				using Tgroup_by_iterator = linq_group_by_iterator<Titerator, Tparams>;
 				using Tgroup_by_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Tgroup_by_iterator>;
-				using Tgroup_by_enumerable = linq_group<Tgroup_by_container>;
+				using Tgroup_by_enumerable = linq_enumerable<Tgroup_by_container>;
 				return Tgroup_by_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(std::forward<Tget>(fnGet), std::forward<Tequal>(fnEqual)));
 			}
 			template <typename Tget>

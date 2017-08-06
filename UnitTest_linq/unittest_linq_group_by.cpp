@@ -13,7 +13,19 @@ namespace UnitTest_linq
 		{
 			using Tsimd_string = jrmwng::sse_string<char>;
 
-			std::vector<Tsimd_string> vectorName0({ "Jeremy", "Cally", "Bianca", "Summon" });
+			std::vector<Tsimd_string> const vectorName0({ "Jeremy", "Cally", "Bianca", "Summon" });
+			std::vector<ptrdiff_t> const vectorGroup1({ 1, 1, 2 });
+
+			Assert::IsTrue(jrmwng::linq::from(vectorName0)
+				.group_by([](auto str)
+			{
+				return str.length();
+			})
+				.select([](auto groupByLength)
+			{
+				return groupByLength.count();
+			})
+				.sequential_equal(vectorGroup1));
 		}
 
 	};
