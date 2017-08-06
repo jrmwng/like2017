@@ -53,7 +53,7 @@ namespace jrmwng
 			{
 				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
 				__m128i const b16This = m_xmm;
-				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
+				int const nIndex = _mm_cmpestri(b1Pattern, 1, b16This, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
 				return nIndex;
 			}
 			int find(simd_string const & that) const
@@ -67,7 +67,7 @@ namespace jrmwng
 			{
 				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
 				__m128i const b16This = m_xmm;
-				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				int const nIndex = _mm_cmpestri(b1Pattern, 1, b16This, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED | _SIDD_POSITIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
 				return nIndex;
 			}
 			int rfind(simd_string const & that) const
@@ -81,7 +81,7 @@ namespace jrmwng
 			{
 				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
 				__m128i const b16This = m_xmm;
-				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
+				int const nIndex = _mm_cmpestri(b1Pattern, 1, b16This, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_POSITIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
 				return nIndex;
 			}
 			int find_first_of(simd_string const & that) const
@@ -95,7 +95,7 @@ namespace jrmwng
 			{
 				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
 				__m128i const b16This = m_xmm;
-				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
+				int const nIndex = _mm_cmpestri(b1Pattern, 1, b16This, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY | _SIDD_LEAST_SIGNIFICANT);
 				return nIndex;
 			}
 			int find_first_not_of(simd_string const & that) const
@@ -109,7 +109,7 @@ namespace jrmwng
 			{
 				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
 				__m128i const b16This = m_xmm;
-				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_POSITIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				int const nIndex = _mm_cmpestri(b1Pattern, 1, b16This, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_POSITIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
 				return nIndex;
 			}
 			int find_last_of(simd_string const & that) const
@@ -123,7 +123,7 @@ namespace jrmwng
 			{
 				__m128i const b1Pattern = _mm_cvtsi32_si128(cPattern);
 				__m128i const b16This = m_xmm;
-				int const nIndex = _mm_cmpistri(b1Pattern, b16This, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
+				int const nIndex = _mm_cmpestri(b1Pattern, 1, b16This, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY | _SIDD_MOST_SIGNIFICANT);
 				return nIndex;
 			}
 			int find_last_not_of(simd_string const & that) const
