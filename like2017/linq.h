@@ -255,8 +255,8 @@ namespace jrmwng
 			{
 				if (itCurrent != m_itEnd)
 				{
-					auto const & fnGet = std::get<0>(params);
-					auto const & fnEqual = std::get<1>(params);
+					auto const & fnGet = std::get<0>(m_params);
+					auto const & fnEqual = std::get<1>(m_params);
 
 					auto const valueCurrent = fnGet(*itCurrent);
 
