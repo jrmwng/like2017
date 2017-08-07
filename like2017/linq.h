@@ -545,6 +545,11 @@ namespace jrmwng
 			{
 				return std::accumulate(Tcontainer::begin(), Tcontainer::end(), value, std::forward<Taccumulate>(fnAccumulate));
 			}
+			template <template <typename T> class Taccumulate, typename Tvalue>
+			Tvalue aggregate(Tvalue value) const
+			{
+				return aggregate(value, Taccumulate<Tvalue>());
+			}
 			template <typename Tfunc>
 			bool all(Tfunc && func) const
 			{
@@ -751,6 +756,17 @@ namespace jrmwng
 			{
 				return *std::min_element(Tcontainer::begin(), Tcontainer::end());
 			}
+			template <typename Treturn, typename Tget>
+			Treturn product(Tget && fnGet) const
+			{
+				return select(std::forward<Tget>(fnGet)).product<Treturn>();
+			}
+			template <typename Treturn>
+			Treturn product() const
+			{
+				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				return aggregate<std::multiplies>(Treturn(1));
+			}
 			template <typename Tthat, typename Tequal>
 			bool sequential_equal(Tthat && that, Tequal && fnEqual)
 			{
@@ -781,16 +797,13 @@ namespace jrmwng
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
 			{
-				return aggregate(Treturn(0), [fnGet](Treturn accumulator, auto const & obj)->Treturn
-				{
-					return static_cast<Treturn>(accumulator + fnGet(obj));
-				});
+				return select(std::forward<Tget>(fnGet)).sum<Treturn>();
 			}
 			template <typename Treturn>
 			Treturn sum() const
 			{
 				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
-				return sum<Treturn>(std::identity<Tvalue>());
+				return aggregate<std::plus>(Treturn(0));
 			}
 
 			template <typename Tcast>
