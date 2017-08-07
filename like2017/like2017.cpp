@@ -25,6 +25,6 @@ int main(int nArg, char *apArg[])
 
 	std::vector<simd_string> vectorArg(apArg + 1, apArg + nArg);
 
-	std::cout << jrmwng::linq::from(vectorArg).order_by(std::identity<simd_string>()) << std::endl;
+	std::cout << jrmwng::linq::from(vectorArg).order_by<std::less>() << std::endl;
 	return 0;
 }

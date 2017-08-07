@@ -341,12 +341,12 @@ namespace jrmwng
 					Titerator itMin = m_itCurrent;
 					Titerator itNext = m_itCurrent;
 					{
-						auto valueMin = *itMin;
+						auto valueMin = fnGet(*itMin);
 						auto valueNext = valueMin; // *itNext;
 
 						for (Titerator it = itMin; it != m_itEnd; ++it)
 						{
-							auto const value = *it;
+							auto const value = fnGet(*it);
 
 							if (fnLess(value, valueMin))
 							{
@@ -925,11 +925,17 @@ namespace jrmwng
 				using Torder_by_enumerable = linq_enumerable<Torder_by_container>;
 				return Torder_by_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(std::forward<Tget>(fnGet), std::forward<Tcompare>(fnCompare)));
 			}
-			template <typename Tget>
+			template <template <typename T> class Tcompare, typename Tget>
 			decltype(auto) order_by(Tget && fnGet) const
 			{
-				using Tcompare = std::less<decltype(fnGet(*Tcontainer::begin()))>;
-				return order_by(std::forward<Tget>(fnGet), Tcompare());
+				using Tvalue = std::decay_t<decltype(fnGet(*Tcontainer::begin()))>;
+				return order_by(std::forward<Tget>(fnGet), Tcompare<Tvalue>());
+			}
+			template <template <typename T> class Tcompare>
+			decltype(auto) order_by() const
+			{
+				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				return order_by(std::identity<Tvalue>(), Tcompare<Tvalue>());
 			}
 		};
 		template <typename Tcontainer>

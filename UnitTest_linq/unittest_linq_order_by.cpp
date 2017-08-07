@@ -16,14 +16,19 @@ namespace UnitTest_linq
 			std::vector<Tsimd_string> vectorName0({ "Jeremy", "Cally" });
 			std::vector<Tsimd_string> vectorName1({ "Cally", "Jeremy" });
 
-			Assert::IsTrue(jrmwng::linq::from(vectorName0).order_by(std::identity<Tsimd_string>())
+			Assert::IsTrue(jrmwng::linq::from(vectorName0).order_by<std::less>()
 				.sequential_equal(vectorName1));
-			Assert::IsFalse(jrmwng::linq::from(vectorName1).order_by(std::identity<Tsimd_string>())
+			Assert::IsFalse(jrmwng::linq::from(vectorName1).order_by<std::less>()
 				.sequential_equal(vectorName0));
 
-			Assert::IsTrue(jrmwng::linq::from(vectorName1).order_by(std::identity<Tsimd_string>(), std::greater<Tsimd_string>())
+			Assert::IsTrue(jrmwng::linq::from(vectorName1).order_by<std::greater>()
 				.sequential_equal(vectorName0));
-			Assert::IsFalse(jrmwng::linq::from(vectorName0).order_by(std::identity<Tsimd_string>(), std::greater<Tsimd_string>())
+			Assert::IsFalse(jrmwng::linq::from(vectorName0).order_by<std::greater>()
+				.sequential_equal(vectorName1));
+
+			Assert::IsTrue(jrmwng::linq::from(vectorName0).order_by<std::less>(std::mem_fun_ref(&Tsimd_string::length))
+				.sequential_equal(vectorName1));
+			Assert::IsTrue(jrmwng::linq::from(vectorName0).order_by(std::mem_fun_ref(&Tsimd_string::length), std::less<int>())
 				.sequential_equal(vectorName1));
 		}
 
