@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iterator>
 #include <numeric>
+#include <array>
 #include <tuple>
 #include <type_traits>
 
@@ -155,49 +156,105 @@ namespace jrmwng
 		class linq_select_many_iterator
 			: public linq_iterator<Titerator>
 		{
-			Tmany_iterator m_itManyCurrent;
-			Tmany_iterator m_itManyEnd;
+			std::array<char, sizeof(Tmany_iterator)> m_itManyCurrent;
+			std::array<char, sizeof(Tmany_iterator)> m_itManyEnd;
 			Titerator const m_itEnd;
 			Tparams const m_params;
+			template <typename T>
+			static void construct(std::array<char, sizeof(T)> & array, T const & t)
+			{
+				new (array.data()) T(t);
+			}
+			template <typename T>
+			static void construct(std::array<char, sizeof(T)> & array, T && t)
+			{
+				new (array.data()) T(std::forward<T>(t));
+			}
+			template <typename T>
+			static void destruct(std::array<char, sizeof(T)> & array)
+			{
+				reinterpret_cast<T*>(array.data())->~T();
+			}
+			template <typename T>
+			static T const & read(std::array<char, sizeof(T)> const & array)
+			{
+				return *reinterpret_cast<T const*>(array.data());
+			}
+			template <typename T>
+			static T & modify(std::array<char, sizeof(T)> & array)
+			{
+				return *reinterpret_cast<T*>(array.data());
+			}
 		public:
 			template <typename Tcontainer>
 			linq_select_many_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
-				//, m_itManyCurrent(std::get<0>(params)(*m_itCurrent).begin())
-				//, m_itManyEnd(std::get<0>(params)(*m_itCurrent).end())
 				, m_itEnd(container.end())
 				, m_params(std::forward<Tparams>(params))
 			{
 				if (m_itCurrent != m_itEnd)
 				{
 					auto const valueCurrent = std::get<0>(m_params)(*m_itCurrent);
-					m_itManyCurrent = valueCurrent.begin();
-					m_itManyEnd = valueCurrent.end();
+					construct<Tmany_iterator>(m_itManyCurrent, valueCurrent.begin());
+					construct<Tmany_iterator>(m_itManyEnd, valueCurrent.end());
+				}
+			}
+			linq_select_many_iterator(linq_select_many_iterator const & that)
+				: linq_iterator<Titerator>(std::move(that))
+				, m_itEnd(that.m_itEnd)
+				, m_params(that.m_params)
+			{
+				if (m_itCurrent != m_itEnd)
+				{
+					construct<Tmany_iterator>(m_itManyCurrent, read<Tmany_iterator>(that.m_itManyCurrent));
+					construct<Tmany_iterator>(m_itManyEnd, read<Tmany_iterator>(that.m_itManyEnd));
+				}
+			}
+			~linq_select_many_iterator()
+			{
+				if (m_itCurrent != m_itEnd)
+				{
+					destruct<Tmany_iterator>(m_itManyCurrent);
+					destruct<Tmany_iterator>(m_itManyEnd);
 				}
 			}
 			decltype(auto) operator * () const
 			{
-				return std::get<1>(m_params)(*m_itCurrent, *m_itManyCurrent);
-			}
-			linq_select_many_iterator & operator = (linq_select_many_iterator const & that)
-			{
-				m_itCurrent = that.m_itCurrent;
-				m_itManyCurrent = that.m_itManyCurrent;
-				m_itManyEnd = that.m_itManyEnd;
-				return *this;
+				return std::get<1>(m_params)(*m_itCurrent, *read<Tmany_iterator>(m_itManyCurrent));
 			}
 			linq_select_many_iterator & operator ++ ()
 			{
-				if (++m_itManyCurrent == m_itManyEnd)
+				if (++modify<Tmany_iterator>(m_itManyCurrent) == read<Tmany_iterator>(m_itManyEnd))
 				{
+					destruct<Tmany_iterator>(m_itManyCurrent);
+					destruct<Tmany_iterator>(m_itManyEnd);
+
 					if (++m_itCurrent != m_itEnd)
 					{
 						auto const valueCurrent = std::get<0>(m_params)(*m_itCurrent);
-						m_itManyCurrent = valueCurrent.begin();
-						m_itManyEnd = valueCurrent.end();
+						construct<Tmany_iterator>(m_itManyCurrent, valueCurrent.begin());
+						construct<Tmany_iterator>(m_itManyEnd, valueCurrent.end());
 					}
 				}
 				return *this;
+			}
+			bool operator == (linq_select_many_iterator const & that) const
+			{
+				return
+					m_itCurrent == that.m_itCurrent &&
+					//m_itEnd == that.m_itEnd &&
+					(
+						m_itCurrent == m_itEnd ||
+						(
+							read<Tmany_iterator>(m_itManyCurrent) == read<Tmany_iterator>(that.m_itManyCurrent)
+							//&&
+							//read<Tmany_iterator>(m_itManyEnd) == read<Tmany_iterator>(that.m_itManyEnd)
+						)
+					);
+			}
+			bool operator != (linq_select_many_iterator const & that) const
+			{
+				return !(*this == that);
 			}
 		};
 		template <typename Titerator, typename Tfunc>
