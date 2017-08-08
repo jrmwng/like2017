@@ -163,12 +163,14 @@
     <ClCompile Include="unittest_linq_group_by.cpp" />
     <ClCompile Include="unittest_linq_intersection.cpp" />
     <ClCompile Include="unittest_linq_order_by.cpp" />
+    <ClCompile Include="unittest_linq_product.cpp" />
     <ClCompile Include="unittest_linq_select.cpp" />
     <ClCompile Include="unittest_linq_select_many.cpp" />
     <ClCompile Include="unittest_linq_sequential_equal.cpp" />
     <ClCompile Include="unittest_linq_skip_while.cpp" />
     <ClCompile Include="unittest_linq_sum.cpp" />
     <ClCompile Include="unittest_linq_take_while.cpp" />
+    <ClCompile Include="unittest_linq_to.cpp" />
     <ClCompile Include="unittest_linq_where.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
