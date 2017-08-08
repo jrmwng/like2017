@@ -953,11 +953,17 @@ namespace jrmwng
 
 			//
 
-			template <template <typename T, typename... Trest> class Ccontainer, typename... Trest>
-			decltype(auto) to() const
+			template <template <typename T, typename... Trest> class Ccontainer, typename... Trest, typename... Targs>
+			decltype(auto) to(Targs && ... args) const
 			{
 				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
-				return Ccontainer<Tvalue, Trest...>(Tcontainer::begin(), Tcontainer::end());
+				return Ccontainer<Tvalue, Trest...>(Tcontainer::begin(), Tcontainer::end(), std::forward<Targs>(args)...);
+			}
+			template <class Ccontainer, typename... Targs>
+			decltype(auto) to(Targs && ... args) const
+			{
+				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				return Ccontainer(Tcontainer::begin(), Tcontainer::end(), std::forward<Targs>(args)...);
 			}
 		};
 		template <typename Tcontainer>
