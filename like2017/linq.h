@@ -950,6 +950,15 @@ namespace jrmwng
 				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
 				return order_by(std::identity<Tvalue>(), Tcompare<Tvalue>());
 			}
+
+			//
+
+			template <template <typename T, typename... Trest> class Ccontainer, typename... Trest>
+			decltype(auto) to() const
+			{
+				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				return Ccontainer<Tvalue, Trest...>(Tcontainer::begin(), Tcontainer::end());
+			}
 		};
 		template <typename Tcontainer>
 		decltype(auto) from(Tcontainer & container)
