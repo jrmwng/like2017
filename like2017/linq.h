@@ -143,6 +143,12 @@ namespace jrmwng
 			}
 			linq_select_iterator & operator = (linq_select_iterator const & that)
 			{
+#ifdef _DEBUG
+				if (memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
+				{
+					__debugbreak();
+				}
+#endif
 				m_itCurrent = that.m_itCurrent;
 				return *this;
 			}
@@ -220,6 +226,13 @@ namespace jrmwng
 			}
 			linq_select_many_iterator & operator = (linq_select_many_iterator const & that)
 			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd ||
+					memcmp(&m_params, &that.m_params, sizeof(Tparams)))
+				{
+					__debugbreak();
+				}
+#endif
 				if (m_itCurrent != m_itEnd)
 				{
 					destruct<Tmany_iterator>(m_itManyCurrent);
@@ -255,6 +268,12 @@ namespace jrmwng
 			}
 			bool operator == (linq_select_many_iterator const & that) const
 			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd)
+				{
+					__debugbreak();
+				}
+#endif
 				return
 					m_itCurrent == that.m_itCurrent &&
 					//m_itEnd == that.m_itEnd &&
@@ -292,6 +311,13 @@ namespace jrmwng
 			}
 			linq_where_iterator & operator = (linq_where_iterator const & that)
 			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd ||
+					memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
+				{
+					__debugbreak();
+				}
+#endif
 				m_itCurrent = that.m_itCurrent;
 				return *this;
 			}
@@ -344,6 +370,14 @@ namespace jrmwng
 			}
 			linq_group_by_iterator & operator = (linq_group_by_iterator const & that)
 			{
+#ifdef _DEBUG
+				if (m_itBegin != that.m_itBegin ||
+					m_itEnd != that.m_itEnd ||
+					memcmp(&m_params, &that.m_params, sizeof(Tparams)))
+				{
+					__debugbreak();
+				}
+#endif
 				m_itCurrent = that.m_itCurrent;
 				m_itNext = that.m_itNext;
 				return *this;
@@ -438,6 +472,14 @@ namespace jrmwng
 			}
 			linq_order_by_iterator & operator = (linq_order_by_iterator const & that)
 			{
+#ifdef _DEBUG
+				if (m_itBegin != that.m_itBegin ||
+					m_itEnd != that.m_itEnd ||
+					memcmp(&m_params, &that.m_params, sizeof(Tparams)))
+				{
+					__debugbreak();
+				}
+#endif
 				m_itCurrent = that.m_itCurrent;
 				m_itNext    = that.m_itNext;
 				return *this;
@@ -505,6 +547,12 @@ namespace jrmwng
 			{}
 			linq_concat_iterator & operator = (linq_concat_iterator const & that)
 			{
+#ifdef _DEBUG
+				if (m_itEnd0 != that.m_itEnd0)
+				{
+					__debugbreak();
+				}
+#endif
 				m_it0 = that.m_it0;
 				m_it1 = that.m_it1;
 				return *this;
@@ -565,6 +613,13 @@ namespace jrmwng
 			}
 			linq_skip_while_iterator & operator = (linq_skip_while_iterator const & that)
 			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd ||
+					memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
+				{
+					__debugbreak();
+				}
+#endif
 				m_itCurrent = that.m_itCurrent;
 				return *this;
 			}
@@ -589,6 +644,13 @@ namespace jrmwng
 			}
 			linq_take_while_iterator & operator = (linq_take_while_iterator const & that)
 			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd ||
+					memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
+				{
+					__debugbreak();
+				}
+#endif
 				m_itCurrent = that.m_itCurrent;
 				return *this;
 			}
