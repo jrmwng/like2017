@@ -218,6 +218,21 @@ namespace jrmwng
 					destruct<Tmany_iterator>(m_itManyEnd);
 				}
 			}
+			linq_select_many_iterator & operator = (linq_select_many_iterator const & that)
+			{
+				if (m_itCurrent != m_itEnd)
+				{
+					destruct<Tmany_iterator>(m_itManyCurrent);
+					destruct<Tmany_iterator>(m_itManyEnd);
+				}
+				m_itCurrent = that.m_itCurrent;
+				if (m_itCurrent != m_itEnd)
+				{
+					construct<Tmany_iterator>(m_itManyCurrent, read<Tmany_iterator>(that.m_itManyCurrent));
+					construct<Tmany_iterator>(m_itManyEnd, read<Tmany_iterator>(that.m_itManyEnd));
+				}
+				return *this;
+			}
 			decltype(auto) operator * () const
 			{
 				return std::get<1>(m_params)(*m_itCurrent, *read<Tmany_iterator>(m_itManyCurrent));

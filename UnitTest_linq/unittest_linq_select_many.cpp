@@ -16,6 +16,16 @@ namespace UnitTest_linq
 			std::vector<Tsimd_string> vectorName0({ "Jeremy", "Cally" });
 			std::vector<Tsimd_string> vectorName1({ "Cally", "Jeremy" });
 
+
+			auto vectorName2 = jrmwng::linq::from(vectorName0)
+				.select_many([&](auto str0)
+			{
+				return jrmwng::linq::from(vectorName0);
+			})
+				.order_by<std::less>()
+				.to<std::vector>();
+
+
 			Assert::IsTrue(jrmwng::linq::from(vectorName0)
 				.select_many([&](auto str0)
 			{
