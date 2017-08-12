@@ -29,11 +29,11 @@ namespace jrmwng
 
 			Titerator begin() const
 			{
-				return Titerator(m_container.begin(), m_container, Tparams(m_params));
+				return Titerator(m_container.begin(), m_container, m_params);
 			}
 			Titerator end() const
 			{
-				return Titerator(m_container.end(), m_container, Tparams(m_params));
+				return Titerator(m_container.end(), m_container, m_params);
 			}
 		};
 		template <typename Tcontainer0, typename Tcontainer1, typename Tparams, typename Titerator>
@@ -136,9 +136,9 @@ namespace jrmwng
 			Tfunc const m_func;
 		public:
 			template <typename Tcontainer>
-			linq_select_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc && func)
+			linq_select_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc const & func)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
-				, m_func(std::forward<Tfunc>(func))
+				, m_func(func)
 			{}
 			Treturn operator * () const
 			{
@@ -167,10 +167,16 @@ namespace jrmwng
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
 		{
+			using Tmany =
+				typename std::tuple_element<0, Tparams>::type;
+			using Tselect =
+				typename std::tuple_element<1, Tparams>::type;
+
 			std::array<char, sizeof(Tmany_iterator)> m_itManyCurrent;
 			std::array<char, sizeof(Tmany_iterator)> m_itManyEnd;
 			Titerator const m_itEnd;
-			Tparams const m_params;
+			Tmany const m_fnMany;
+			Tselect const m_fnSelect;
 			template <typename T>
 			static void construct(std::array<char, sizeof(T)> & array, T const & t)
 			{
@@ -198,14 +204,15 @@ namespace jrmwng
 			}
 		public:
 			template <typename Tcontainer>
-			linq_select_many_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
+			linq_select_many_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_itEnd(container.end())
-				, m_params(std::forward<Tparams>(params))
+				, m_fnMany(std::get<0>(params))
+				, m_fnSelect(std::get<1>(params))
 			{
 				if (m_itCurrent != m_itEnd)
 				{
-					auto const valueCurrent = std::get<0>(m_params)(*m_itCurrent);
+					auto const valueCurrent = m_fnMany(*m_itCurrent);
 					construct<Tmany_iterator>(m_itManyCurrent, valueCurrent.begin());
 					construct<Tmany_iterator>(m_itManyEnd, valueCurrent.end());
 				}
@@ -213,7 +220,8 @@ namespace jrmwng
 			linq_select_many_iterator(linq_select_many_iterator const & that)
 				: linq_iterator<Titerator>(std::move(that))
 				, m_itEnd(that.m_itEnd)
-				, m_params(that.m_params)
+				, m_fnMany(that.m_fnMany)
+				, m_fnSelect(that.m_fnSelect)
 			{
 				if (m_itCurrent != m_itEnd)
 				{
@@ -233,7 +241,8 @@ namespace jrmwng
 			{
 #ifdef _DEBUG
 				if (m_itEnd != that.m_itEnd ||
-					memcmp(&m_params, &that.m_params, sizeof(Tparams)))
+					memcmp(&m_fnMany, &that.m_fnMany, sizeof(Tmany)) ||
+					memcmp(&m_fnSelect, &that.m_fnSelect, sizeof(Tselect)))
 				{
 					__debugbreak();
 				}
@@ -253,8 +262,8 @@ namespace jrmwng
 			}
 			Treturn operator * () const
 			{
-				static_assert(std::is_same<Treturn, decltype(std::get<1>(m_params)(*m_itCurrent, *read<Tmany_iterator>(m_itManyCurrent)))>::value, "Mismatch of return type 'Treturn'");
-				return std::get<1>(m_params)(*m_itCurrent, *read<Tmany_iterator>(m_itManyCurrent));
+				static_assert(std::is_same<Treturn, decltype(m_fnSelect(*m_itCurrent, *read<Tmany_iterator>(m_itManyCurrent)))>::value, "Mismatch of return type 'Treturn'");
+				return m_fnSelect(*m_itCurrent, *read<Tmany_iterator>(m_itManyCurrent));
 			}
 			linq_select_many_iterator & operator ++ ()
 			{
@@ -265,7 +274,7 @@ namespace jrmwng
 
 					if (++m_itCurrent != m_itEnd)
 					{
-						auto const valueCurrent = std::get<0>(m_params)(*m_itCurrent);
+						auto const valueCurrent = m_fnMany(*m_itCurrent);
 						construct<Tmany_iterator>(m_itManyCurrent, valueCurrent.begin());
 						construct<Tmany_iterator>(m_itManyEnd, valueCurrent.end());
 					}
@@ -306,10 +315,10 @@ namespace jrmwng
 			Tfunc const m_func;
 		public:
 			template <typename Tcontainer>
-			linq_where_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc && func)
+			linq_where_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc const & func)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_itEnd(container.end())
-				, m_func(std::forward<Tfunc>(func))
+				, m_func(func)
 			{
 				for (; m_itCurrent != m_itEnd && !m_func(*m_itCurrent); ++m_itCurrent)
 				{
@@ -346,14 +355,19 @@ namespace jrmwng
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, linq_enumerable<linq_range<Titerator>>>
 		{
+			using Tget =
+				typename std::tuple_element<0, Tparams>::type;
+			using Tequal =
+				typename std::tuple_element<1, Tparams>::type;
+
 			Titerator m_itNext;
 			Titerator const m_itBegin;
 			Titerator const m_itEnd;
-			typename std::tuple_element<0, Tparams>::type const m_fnGet;
-			typename std::tuple_element<1, Tparams>::type const m_fnEqual;
+			Tget const m_fnGet;
+			Tequal const m_fnEqual;
 		public:
 			template <typename Tcontainer>
-			linq_uniq_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
+			linq_uniq_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_itNext(itCurrent)
 				, m_itBegin(container.begin())
@@ -380,8 +394,8 @@ namespace jrmwng
 #ifdef _DEBUG
 				if (m_itBegin != that.m_itBegin ||
 					m_itEnd != that.m_itEnd ||
-					memcmp(&m_fnGet, &that.m_fnGet, sizeof(m_fnGet)) ||
-					memcmp(&m_fnEqual, &that.m_fnEqual, sizeof(m_fnEqual)))
+					memcmp(&m_fnGet, &that.m_fnGet, sizeof(Tget)) ||
+					memcmp(&m_fnEqual, &that.m_fnEqual, sizeof(Tequal)))
 				{
 					__debugbreak();
 				}
@@ -434,23 +448,30 @@ namespace jrmwng
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, typename Titerator::value_type>
 		{
+			using Tget =
+				typename std::tuple_element<0, Tparams>::type;
+			using Tless =
+				typename std::tuple_element<1, Tparams>::type;
+
 			Titerator m_itNext;
 			Titerator const m_itBegin;
 			Titerator const m_itEnd;
-			Tparams const m_params;
+			Tget const m_fnGet;
+			Tless const m_fnLess;
 		public:
 			template <typename Tcontainer>
-			linq_order_by_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
+			linq_order_by_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_itNext(container.end())
 				, m_itBegin(container.begin())
 				, m_itEnd(container.end())
-				, m_params(std::forward<Tparams>(params))
+				, m_fnGet(std::get<0>(params))
+				, m_fnLess(std::get<1>(params))
 			{
 				if (m_itCurrent != m_itEnd)
 				{
-					auto const & fnGet = std::get<0>(m_params);
-					auto const & fnLess = std::get<1>(m_params);
+					auto const & fnGet = m_fnGet;
+					auto const & fnLess = m_fnLess;
 
 					Titerator itMin = m_itCurrent;
 					Titerator itNext = m_itCurrent;
@@ -483,7 +504,8 @@ namespace jrmwng
 #ifdef _DEBUG
 				if (m_itBegin != that.m_itBegin ||
 					m_itEnd != that.m_itEnd ||
-					memcmp(&m_params, &that.m_params, sizeof(Tparams)))
+					memcmp(&m_fnGet, &that.m_fnGet, sizeof(Tget)) ||
+					memcmp(&m_fnLess, &that.m_fnLess, sizeof(Tless)))
 				{
 					__debugbreak();
 				}
@@ -494,8 +516,8 @@ namespace jrmwng
 			}
 			linq_order_by_iterator & operator ++ ()
 			{
-				auto const & fnGet = std::get<0>(m_params);
-				auto const & fnLess = std::get<1>(m_params);
+				auto const & fnGet = m_fnGet;
+				auto const & fnLess = m_fnLess;
 				auto const valueKey = fnGet(*m_itCurrent);
 				auto valueNext = fnGet(*m_itNext);
 
@@ -607,10 +629,10 @@ namespace jrmwng
 			Tfunc const m_func;
 		public:
 			template <typename Tcontainer>
-			linq_skip_while_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc && func)
+			linq_skip_while_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc const & func)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_itEnd(container.end())
-				, m_func(std::forward<Tfunc>(func))
+				, m_func(func)
 			{
 				for (; m_itCurrent != m_itEnd; ++m_itCurrent)
 				{
@@ -642,10 +664,10 @@ namespace jrmwng
 			Tfunc const m_func;
 		public:
 			template <typename Tcontainer>
-			linq_take_while_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc && func)
+			linq_take_while_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc const & func)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_itEnd(container.end())
-				, m_func(std::forward<Tfunc>(func))
+				, m_func(func)
 			{
 				if (m_itCurrent != m_itEnd && !m_func(*m_itCurrent))
 				{
