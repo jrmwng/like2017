@@ -1576,6 +1576,21 @@ namespace jrmwng
 					Tgroup_join_enumerable;
 				return Tgroup_join_enumerable(Tcontainer(*this), Tparams(std::move(linqThat), std::forward<Touter_key_selector>(fnOuterKeySelector), std::forward<Tinner_key_selector>(fnInnerKeySelector), std::forward<Tresult_selector>(fnResultSelector)));
 			}
+			template <typename Tthat, typename Touter_key_selector, typename Tinner_key_selector, typename Tresult_selector>
+			decltype(auto) join(Tthat && that, Touter_key_selector && fnOuterKeySelector, Tinner_key_selector && fnInnerKeySelector, Tresult_selector && fnResultSelector)
+			{
+				return select_many(
+					[linqInner = from(std::forward<Tthat>(that)), fnOuterKeySelector, fnInnerKeySelector](auto const & objOuter)
+				{
+					return linqInner
+						.where([keyOuter = fnOuterKeySelector(objOuter), fnInnerKeySelector](auto const & objInner)
+					{
+						return keyOuter == fnInnerKeySelector(objInner);
+					});
+				},
+					std::forward<Tresult_selector>(fnResultSelector)
+					);
+			}
 			template <typename Tfunc>
 			decltype(auto) where(Tfunc && func) const
 			{

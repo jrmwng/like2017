@@ -163,6 +163,7 @@
     <ClCompile Include="unittest_linq_element.cpp" />
     <ClCompile Include="unittest_linq_group_by.cpp" />
     <ClCompile Include="unittest_linq_group_join.cpp" />
+    <ClCompile Include="unittest_linq_join.cpp" />
     <ClCompile Include="unittest_linq_uniq.cpp" />
     <ClCompile Include="unittest_linq_intersection.cpp" />
     <ClCompile Include="unittest_linq_order_by.cpp" />
