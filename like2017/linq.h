@@ -10,6 +10,16 @@
 #include <tuple>
 #include <type_traits>
 
+#pragma push_macro("DEBUG_CHECK")
+#ifdef DEBUG_CHECK
+#undef DEBUG_CHECK
+#endif
+#ifdef _DEBUG
+#define DEBUG_CHECK(that) debug_check(that)
+#else
+#define DEBUG_CHECK(that) 
+#endif
+
 namespace jrmwng
 {
 	namespace linq
@@ -135,6 +145,16 @@ namespace jrmwng
 			, public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
 		{
 			Tfunc const m_func;
+
+			void debug_check(linq_select_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (typeid(m_func) != typeid(that.m_func))
+				{
+					__debugbreak();
+				}
+#endif
+			}
 		public:
 			template <typename Tcontainer>
 			linq_select_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc const & func)
@@ -146,14 +166,19 @@ namespace jrmwng
 				static_assert(std::is_same<Treturn, decltype(m_func(*m_itCurrent))>::value, "Mismatch of return type 'Treturn'");
 				return m_func(*m_itCurrent);
 			}
+			bool operator == (linq_select_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent == that.m_itCurrent;
+			}
+			bool operator != (linq_select_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent != that.m_itCurrent;
+			}
 			linq_select_iterator & operator = (linq_select_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				m_itCurrent = that.m_itCurrent;
 				return *this;
 			}
@@ -203,6 +228,17 @@ namespace jrmwng
 			{
 				return *reinterpret_cast<T*>(array.data());
 			}
+			void debug_check(linq_select_many_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd ||
+					typeid(m_fnMany) != typeid(that.m_fnMany) ||
+					typeid(m_fnSelect) != typeid(that.m_fnSelect))
+				{
+					__debugbreak();
+				}
+#endif
+			}
 		public:
 			template <typename Tcontainer>
 			linq_select_many_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
@@ -240,14 +276,7 @@ namespace jrmwng
 			}
 			linq_select_many_iterator & operator = (linq_select_many_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (m_itEnd != that.m_itEnd ||
-					memcmp(&m_fnMany, &that.m_fnMany, sizeof(Tmany)) ||
-					memcmp(&m_fnSelect, &that.m_fnSelect, sizeof(Tselect)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				if (m_itCurrent != m_itEnd)
 				{
 					destruct<Tmany_iterator>(m_itManyCurrent);
@@ -284,21 +313,13 @@ namespace jrmwng
 			}
 			bool operator == (linq_select_many_iterator const & that) const
 			{
-#ifdef _DEBUG
-				if (m_itEnd != that.m_itEnd)
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				return
 					m_itCurrent == that.m_itCurrent &&
-					//m_itEnd == that.m_itEnd &&
 					(
 						m_itCurrent == m_itEnd ||
 						(
 							read<Tmany_iterator>(m_itManyCurrent) == read<Tmany_iterator>(that.m_itManyCurrent)
-							//&&
-							//read<Tmany_iterator>(m_itManyEnd) == read<Tmany_iterator>(that.m_itManyEnd)
 						)
 					);
 			}
@@ -329,10 +350,10 @@ namespace jrmwng
 			void debug_check(linq_group_join_iterator const & that) const
 			{
 #ifdef _DEBUG
-				if (memcmp(&m_Inner, &that.m_Inner, sizeof(Tinner)) ||
-					memcmp(&m_fnOuterKeySelector, &that.m_fnOuterKeySelector, sizeof(Touter_key_selector)) ||
-					memcmp(&m_fnInnerKeySelector, &that.m_fnInnerKeySelector, sizeof(Tinner_key_selector)) ||
-					memcmp(&m_fnResultSelector, &that.m_fnResultSelector, sizeof(Tresult_selector)))
+				if (typeid(m_Inner) != typeid(that.m_Inner) ||
+					typeid(m_fnOuterKeySelector) != typeid(that.m_fnOuterKeySelector) ||
+					typeid(m_fnInnerKeySelector) != typeid(that.m_fnInnerKeySelector) ||
+					typeid(m_fnResultSelector) != typeid(that.m_fnResultSelector))
 				{
 					__debugbreak();
 				}
@@ -349,17 +370,17 @@ namespace jrmwng
 			{}
 			bool operator == (linq_group_join_iterator const & that) const
 			{
-				debug_check(that);
+				DEBUG_CHECK(that);
 				return m_itCurrent == that.m_itCurrent;
 			}
 			bool operator != (linq_group_join_iterator const & that) const
 			{
-				debug_check(that);
+				DEBUG_CHECK(that);
 				return m_itCurrent != that.m_itCurrent;
 			}
 			linq_group_join_iterator & operator = (linq_group_join_iterator const & that)
 			{
-				debug_check(that);
+				DEBUG_CHECK(that);
 				m_itCurrent = that.m_itCurrent;
 				return *this;
 			}
@@ -380,6 +401,17 @@ namespace jrmwng
 		{
 			Titerator const m_itEnd;
 			Tfunc const m_func;
+
+			void debug_check(linq_where_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd ||
+					typeid(m_func) != typeid(that.m_func))
+				{
+					__debugbreak();
+				}
+#endif
+			}
 		public:
 			template <typename Tcontainer>
 			linq_where_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc const & func)
@@ -394,15 +426,19 @@ namespace jrmwng
 			}
 			linq_where_iterator & operator = (linq_where_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (m_itEnd != that.m_itEnd ||
-					memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				m_itCurrent = that.m_itCurrent;
 				return *this;
+			}
+			bool operator == (linq_where_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent == that.m_itCurrent;
+			}
+			bool operator != (linq_where_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent != that.m_itCurrent;
 			}
 			linq_where_iterator & operator ++ ()
 			{
@@ -431,6 +467,19 @@ namespace jrmwng
 			Titerator const m_itEnd;
 			Tget const m_fnGet;
 			Tequal const m_fnEqual;
+
+			void debug_check(linq_group_by_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (m_itBegin != that.m_itBegin ||
+					m_itEnd != that.m_itEnd ||
+					typeid(m_fnGet) != typeid(that.m_fnGet) ||
+					typeid(m_fnEqual) != typeid(that.m_fnEqual))
+				{
+					__debugbreak();
+				}
+#endif
+			}
 		public:
 			template <typename Tcontainer>
 			linq_group_by_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
@@ -442,17 +491,19 @@ namespace jrmwng
 			{}
 			typename linq_group_by_iterator & operator = (linq_group_by_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (m_itBegin != that.m_itBegin ||
-					m_itEnd != that.m_itEnd ||
-					memcmp(&m_fnGet, &that.m_fnGet, sizeof(Tget)) ||
-					memcmp(&m_fnEqual, &that.m_fnEqual, sizeof(Tequal)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				m_itCurrent = that.m_itCurrent;
 				return *this;
+			}
+			bool operator == (linq_group_by_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent == that.m_itCurrent;
+			}
+			bool operator != (linq_group_by_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent != that.m_itCurrent;
 			}
 			typename linq_group_by_iterator & operator ++ ()
 			{
@@ -502,6 +553,19 @@ namespace jrmwng
 			Titerator const m_itEnd;
 			Tget const m_fnGet;
 			Tequal const m_fnEqual;
+
+			void debug_check(linq_uniq_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (m_itBegin != that.m_itBegin ||
+					m_itEnd != that.m_itEnd ||
+					typeid(m_fnGet) != typeid(that.m_fnGet) ||
+					typeid(m_fnEqual) != typeid(that.m_fnEqual))
+				{
+					__debugbreak();
+				}
+#endif
+			}
 		public:
 			template <typename Tcontainer>
 			linq_uniq_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
@@ -528,18 +592,20 @@ namespace jrmwng
 			}
 			linq_uniq_iterator & operator = (linq_uniq_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (m_itBegin != that.m_itBegin ||
-					m_itEnd != that.m_itEnd ||
-					memcmp(&m_fnGet, &that.m_fnGet, sizeof(Tget)) ||
-					memcmp(&m_fnEqual, &that.m_fnEqual, sizeof(Tequal)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				m_itCurrent = that.m_itCurrent;
 				m_itNext = that.m_itNext;
 				return *this;
+			}
+			bool operator == (linq_uniq_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent == that.m_itCurrent && m_itNext == that.m_itNext;
+			}
+			bool operator != (linq_uniq_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent != that.m_itCurrent || m_itNext != that.m_itNext;
 			}
 			linq_uniq_iterator & operator ++ ()
 			{
@@ -587,6 +653,19 @@ namespace jrmwng
 			Titerator const m_itEnd;
 			Tget const m_fnGet;
 			Tless const m_fnLess;
+
+			void debug_check(linq_order_by_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (m_itBegin != that.m_itBegin ||
+					m_itEnd != that.m_itEnd ||
+					typeid(m_fnGet) != typeid(that.m_fnGet) ||
+					typeid(m_fnLess) != typeid(that.m_fnLess))
+				{
+					__debugbreak();
+				}
+#endif
+			}
 		public:
 			template <typename Tcontainer>
 			linq_order_by_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
@@ -630,18 +709,20 @@ namespace jrmwng
 			}
 			linq_order_by_iterator & operator = (linq_order_by_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (m_itBegin != that.m_itBegin ||
-					m_itEnd != that.m_itEnd ||
-					memcmp(&m_fnGet, &that.m_fnGet, sizeof(Tget)) ||
-					memcmp(&m_fnLess, &that.m_fnLess, sizeof(Tless)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				m_itCurrent = that.m_itCurrent;
 				m_itNext    = that.m_itNext;
 				return *this;
+			}
+			bool operator == (linq_order_by_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent == that.m_itCurrent;
+			}
+			bool operator != (linq_order_by_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent != that.m_itCurrent;
 			}
 			linq_order_by_iterator & operator ++ ()
 			{
@@ -696,15 +777,8 @@ namespace jrmwng
 			Titerator0 m_it0;
 			Titerator1 m_it1;
 			Titerator0 const m_itEnd0;
-		public:
-			typedef std::forward_iterator_tag iterator_category;
 
-			linq_concat_iterator(Titerator0 && it0, Titerator1 && it1, Titerator0 const & itEnd0)
-				: m_it0(std::forward<Titerator0>(it0))
-				, m_it1(std::forward<Titerator1>(it1))
-				, m_itEnd0(itEnd0)
-			{}
-			linq_concat_iterator & operator = (linq_concat_iterator const & that)
+			void debug_check(linq_concat_iterator const & that) const
 			{
 #ifdef _DEBUG
 				if (m_itEnd0 != that.m_itEnd0)
@@ -712,6 +786,16 @@ namespace jrmwng
 					__debugbreak();
 				}
 #endif
+			}
+		public:
+			linq_concat_iterator(Titerator0 && it0, Titerator1 && it1, Titerator0 const & itEnd0)
+				: m_it0(std::forward<Titerator0>(it0))
+				, m_it1(std::forward<Titerator1>(it1))
+				, m_itEnd0(itEnd0)
+			{}
+			linq_concat_iterator & operator = (linq_concat_iterator const & that)
+			{
+				DEBUG_CHECK(that);
 				m_it0 = that.m_it0;
 				m_it1 = that.m_it1;
 				return *this;
@@ -741,10 +825,12 @@ namespace jrmwng
 			}
 			bool operator == (linq_concat_iterator const & that) const
 			{
+				DEBUG_CHECK(that);
 				return m_it0 == that.m_it0 && m_it1 == that.m_it1;
 			}
 			bool operator != (linq_concat_iterator const & that) const
 			{
+				DEBUG_CHECK(that);
 				return m_it0 != that.m_it0 || m_it1 != that.m_it1;
 			}
 		};
@@ -756,6 +842,17 @@ namespace jrmwng
 		{
 			Titerator const m_itEnd;
 			Tfunc const m_func;
+
+			void debug_check(linq_skip_while_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd ||
+					typeid(m_func) != typeid(that.m_func))
+				{
+					__debugbreak();
+				}
+#endif
+			}
 		public:
 			template <typename Tcontainer>
 			linq_skip_while_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc const & func)
@@ -773,15 +870,19 @@ namespace jrmwng
 			}
 			linq_skip_while_iterator & operator = (linq_skip_while_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (m_itEnd != that.m_itEnd ||
-					memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				m_itCurrent = that.m_itCurrent;
 				return *this;
+			}
+			bool operator == (linq_skip_while_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent == that.m_itCurrent;
+			}
+			bool operator != (linq_skip_while_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent != that.m_itCurrent;
 			}
 		};
 		template <typename Titerator, typename Tfunc>
@@ -791,6 +892,17 @@ namespace jrmwng
 		{
 			Titerator const m_itEnd;
 			Tfunc const m_func;
+
+			void debug_check(linq_take_while_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (m_itEnd != that.m_itEnd ||
+					typeid(m_func) != typeid(that.m_func))
+				{
+					__debugbreak();
+				}
+#endif
+			}
 		public:
 			template <typename Tcontainer>
 			linq_take_while_iterator(Titerator && itCurrent, Tcontainer const & container, Tfunc const & func)
@@ -805,15 +917,19 @@ namespace jrmwng
 			}
 			linq_take_while_iterator & operator = (linq_take_while_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (m_itEnd != that.m_itEnd ||
-					memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				m_itCurrent = that.m_itCurrent;
 				return *this;
+			}
+			bool operator == (linq_take_while_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent == that.m_itCurrent;
+			}
+			bool operator != (linq_take_while_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent != that.m_itCurrent;
 			}
 			linq_take_while_iterator & operator ++ ()
 			{
@@ -831,9 +947,17 @@ namespace jrmwng
 			Titerator0 m_it0;
 			Titerator1 m_it1;
 			Tfunc const m_func;
-		public:
-			typedef std::forward_iterator_tag iterator_category;
 
+			void debug_check(linq_zip_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (typeid(m_func) != typeid(that.m_func))
+				{
+					__debugbreak();
+				}
+#endif
+			}
+		public:
 			linq_zip_iterator(Titerator0 && it0, Titerator1 && it1, Tfunc const & func)
 				: m_it0(std::forward<Titerator0>(it0))
 				, m_it1(std::forward<Titerator1>(it1))
@@ -842,10 +966,12 @@ namespace jrmwng
 
 			bool operator == (linq_zip_iterator const & that) const
 			{
+				DEBUG_CHECK(that);
 				return m_it0 == that.m_it0 && m_it1 == that.m_it1;
 			}
 			bool operator != (linq_zip_iterator const & that) const
 			{
+				DEBUG_CHECK(that);
 				return m_it0 != that.m_it0 || m_it1 != that.m_it1;
 			}
 
@@ -857,12 +983,7 @@ namespace jrmwng
 
 			linq_zip_iterator & operator = (linq_zip_iterator const & that)
 			{
-#ifdef _DEBUG
-				if (memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
-				{
-					__debugbreak();
-				}
-#endif
+				DEBUG_CHECK(that);
 				m_it0 = that.m_it0;
 				m_it1 = that.m_it1;
 				return *this;
@@ -1377,3 +1498,5 @@ namespace jrmwng
 		}
 	}
 }
+
+#pragma pop_macro("DEBUG_CHECK")
