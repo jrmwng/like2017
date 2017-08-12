@@ -202,10 +202,10 @@ namespace jrmwng
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
 		{
-			using Tmany =
-				typename std::tuple_element<0, Tparams>::type;
-			using Tselect =
-				typename std::tuple_element<1, Tparams>::type;
+			typedef typename std::tuple_element<0, Tparams>::type
+				Tmany;
+			typedef typename std::tuple_element<1, Tparams>::type
+				Tselect;
 
 			std::array<char, sizeof(Tmany_iterator)> m_itManyCurrent;
 			std::array<char, sizeof(Tmany_iterator)> m_itManyEnd;
@@ -345,14 +345,14 @@ namespace jrmwng
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
 		{
-			using Tinner =
-				typename std::tuple_element<0, Tparams>::type;
-			using Touter_key_selector =
-				typename std::tuple_element<1, Tparams>::type;
-			using Tinner_key_selector =
-				typename std::tuple_element<2, Tparams>::type;
-			using Tresult_selector =
-				typename std::tuple_element<3, Tparams>::type;
+			typedef typename std::tuple_element<0, Tparams>::type
+				Tinner;
+			typedef typename std::tuple_element<1, Tparams>::type
+				Touter_key_selector;
+			typedef typename std::tuple_element<2, Tparams>::type
+				Tinner_key_selector;
+			typedef typename std::tuple_element<3, Tparams>::type
+				Tresult_selector;
 
 			Tinner const m_Inner;
 			Touter_key_selector const m_fnOuterKeySelector;
@@ -476,10 +476,10 @@ namespace jrmwng
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, linq_enumerable<linq_range<Titerator>>>
 		{
-			using Tget =
-				typename std::tuple_element<0, Tparams>::type;
-			using Tequal =
-				typename std::tuple_element<1, Tparams>::type;
+			typedef typename std::tuple_element<0, Tparams>::type
+				Tget;
+			typedef typename std::tuple_element<1, Tparams>::type
+				Tequal;
 
 			Titerator const m_itBegin;
 			Titerator const m_itEnd;
@@ -545,8 +545,10 @@ namespace jrmwng
 			}
 			decltype(auto) operator * () const
 			{
-				using Trange = linq_range<Titerator>;
-				using Trange_enumerable = linq_enumerable<Trange>;
+				typedef linq_range<Titerator>
+					Trange;
+				typedef linq_enumerable<Trange>
+					Trange_enumerable;
 				//static_assert(std::is_same<Treturn, decltype(linq_enumerable<linq_range<Titerator>>(m_itCurrent, m_itEnd).where(std::bind(m_fnEqual, std::placeholders::_1, m_fnGet(*m_itCurrent))))>::value, "Mismatch of return type 'Treturn'");
 				return Trange_enumerable(m_itCurrent, m_itEnd)
 					.where([this](auto const & obj)
@@ -564,10 +566,10 @@ namespace jrmwng
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, linq_enumerable<linq_range<Titerator>>>
 		{
-			using Tget =
-				typename std::tuple_element<0, Tparams>::type;
-			using Tequal =
-				typename std::tuple_element<1, Tparams>::type;
+			typedef typename std::tuple_element<0, Tparams>::type
+				Tget;
+			typedef typename std::tuple_element<1, Tparams>::type
+				Tequal;
 
 			Titerator m_itNext;
 			Titerator const m_itBegin;
@@ -652,8 +654,10 @@ namespace jrmwng
 			}
 			decltype(auto) operator * () const
 			{
-				using Trange = linq_range<Titerator>;
-				using Trange_enumerable = linq_enumerable<Trange>;
+				typedef linq_range<Titerator>
+					Trange;
+				typedef linq_enumerable<Trange>
+					Trange_enumerable;
 				static_assert(std::is_same<Trange_enumerable, value_type>::value, "Mismatch of return type 'Treturn'");
 				return Trange_enumerable(m_itCurrent, m_itNext);
 			}
@@ -667,10 +671,10 @@ namespace jrmwng
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, typename Titerator::value_type>
 		{
-			using Tget =
-				typename std::tuple_element<0, Tparams>::type;
-			using Tless =
-				typename std::tuple_element<1, Tparams>::type;
+			typedef typename std::tuple_element<0, Tparams>::type
+				Tget;
+			typedef typename std::tuple_element<1, Tparams>::type
+				Tless;
 
 			Titerator m_itNext;
 			Titerator const m_itBegin;
@@ -1041,6 +1045,9 @@ namespace jrmwng
 			: public Tcontainer
 		{
 		public:
+			typedef Tcontainer
+				container_type;
+
 			template <typename... Targs>
 			linq_enumerable(Targs && ... args)
 				: Tcontainer(std::forward<Targs>(args)...)
@@ -1082,7 +1089,8 @@ namespace jrmwng
 			template <typename Treturn>
 			Treturn average() const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Tvalue;
 				return average<Treturn>(std::identity<Tvalue>());
 			}
 			template <typename Tvalue, typename Tfunc>
@@ -1123,7 +1131,8 @@ namespace jrmwng
 			}
 			decltype(auto) element_at_or_default(size_t uIndex) const
 			{
-				using Treturn = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Treturn;
 
 				for (auto it = Tcontainer::begin(), itEnd = Tcontainer::end(); it != itEnd; ++it)
 				{
@@ -1161,7 +1170,8 @@ namespace jrmwng
 			template <typename Tfunc>
 			decltype(auto) first_or_default(Tfunc && func) const
 			{
-				using Treturn = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Treturn;
 
 				auto const itBegin = Tcontainer::begin();
 				auto const itEnd = Tcontainer::end();
@@ -1216,7 +1226,8 @@ namespace jrmwng
 			template <typename Tfunc>
 			decltype(auto) last_or_default(Tfunc && func) const
 			{
-				using Treturn = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Treturn;
 
 				auto const itBegin = Tcontainer::begin();
 				auto const itEnd = Tcontainer::end();
@@ -1270,7 +1281,6 @@ namespace jrmwng
 			template <typename Treturn>
 			Treturn product() const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
 				return aggregate<std::multiplies>(Treturn(1));
 			}
 			template <typename Tthat, typename Tequal>
@@ -1297,7 +1307,8 @@ namespace jrmwng
 			template <typename Tthat>
 			bool sequential_equal(Tthat && that) const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Tvalue;
 				return sequential_equal(std::forward<Tthat>(that), std::equal_to<Tvalue>());
 			}
 			template <typename Treturn, typename Tget>
@@ -1308,7 +1319,8 @@ namespace jrmwng
 			template <typename Treturn>
 			Treturn sum() const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Tvalue;
 				return aggregate<std::plus>(Treturn(0));
 			}
 
@@ -1324,13 +1336,21 @@ namespace jrmwng
 			decltype(auto) concat(Tthat && that) const
 			{
 				auto linqThat = from(std::forward<Tthat>(that));
-				using Tlinq_that = std::decay_t<decltype(linqThat)>;
-				using Titerator0 = decltype(Tcontainer::begin());
-				using Titerator1 = decltype(linqThat.begin());
-				using Tconcat_iterator = linq_concat_iterator<Titerator0, Titerator1>;
-				using Tconcat_container = linq_pair_container<Tcontainer, Tlinq_that, Tconcat_iterator>;
-				using Tconcat_enumerable = linq_enumerable<Tconcat_container>;
-				return Tconcat_enumerable(Tcontainer(*this), std::forward<Tlinq_that>(linqThat), Tcontainer::end());
+				typedef decltype(linqThat)
+					Tthat_linq;
+				typedef typename Tthat_linq::container_type
+					Tthat_container;
+				typedef decltype(Tcontainer::begin())
+					Titerator0;
+				typedef decltype(linqThat.begin())
+					Titerator1;
+				typedef linq_concat_iterator<Titerator0, Titerator1>
+					Tconcat_iterator;
+				typedef linq_pair_container<Tcontainer, Tthat_container, Tconcat_iterator>
+					Tconcat_container;
+				typedef linq_enumerable<Tconcat_container>
+					Tconcat_enumerable;
+				return Tconcat_enumerable(Tcontainer(*this), std::forward<Tthat_linq>(linqThat), Tcontainer::end());
 			}
 			// TODO: distinct
 			template <typename Tthat, typename Tequal>
@@ -1345,7 +1365,8 @@ namespace jrmwng
 			template <typename Tthat>
 			decltype(auto) except(Tthat && that) const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Tvalue;
 				return except(std::forward<Tthat>(that), std::equal_to<Tvalue>());
 			}
 			template <typename Tthat, typename Tequal>
@@ -1360,29 +1381,42 @@ namespace jrmwng
 			template <typename Tthat>
 			decltype(auto) intersection(Tthat && that) const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Tvalue;
 				return intersection(std::forward<Tthat>(that), std::equal_to<Tvalue>());
 			}
 			template <typename Tfunc>
 			decltype(auto) select(Tfunc && func) const
 			{
-				using Titerator = decltype(Tcontainer::begin());
-				using Treturn = decltype(func(*Tcontainer::begin()));
-				using Tselect_iterator = linq_select_iterator<Titerator, Tfunc, Treturn>;
-				using Tselect_container = linq_container<Tcontainer, Tselect_iterator>;
-				using Tselect_enumerable = linq_enumerable<Tselect_container>;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef decltype(func(*Tcontainer::begin()))
+					Treturn;
+				typedef linq_select_iterator<Titerator, Tfunc, Treturn>
+					Tselect_iterator;
+				typedef linq_container<Tcontainer, Tselect_iterator>
+					Tselect_container;
+				typedef linq_enumerable<Tselect_container>
+					Tselect_enumerable;
 				return Tselect_enumerable(Tcontainer(*this), std::forward<Tfunc>(func));
 			}
 			template <typename Tmany, typename Tselect>
 			decltype(auto) select_many(Tmany && fnMany, Tselect && fnSelect) const
 			{
-				using Titerator = decltype(Tcontainer::begin());
-				using Tmany_iterator = decltype(fnMany(*Tcontainer::begin()).begin());
-				using Tparams = std::tuple<Tmany, Tselect>;
-				using Treturn = decltype(fnSelect(*Tcontainer::begin(), *fnMany(*Tcontainer::begin()).begin()));
-				using Tselect_many_iterator = linq_select_many_iterator<Titerator, Tmany_iterator, Tparams, Treturn>;
-				using Tselect_many_container = linq_container<Tcontainer, Tselect_many_iterator>;
-				using Tselect_many_enumerable = linq_enumerable<Tselect_many_container>;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef decltype(fnMany(*Tcontainer::begin()).begin())
+					Tmany_iterator;
+				typedef std::tuple<Tmany, Tselect>
+					Tparams;
+				typedef decltype(fnSelect(*Tcontainer::begin(), *fnMany(*Tcontainer::begin()).begin()))
+					Treturn;
+				typedef linq_select_many_iterator<Titerator, Tmany_iterator, Tparams, Treturn>
+					Tselect_many_iterator;
+				typedef linq_container<Tcontainer, Tselect_many_iterator>
+					Tselect_many_container;
+				typedef linq_enumerable<Tselect_many_container>
+					Tselect_many_enumerable;
 				return Tselect_many_enumerable(Tcontainer(*this), Tparams(std::forward<Tmany>(fnMany), std::forward<Tselect>(fnSelect)));
 			}
 			template <typename Tmany>
@@ -1396,111 +1430,153 @@ namespace jrmwng
 			template <typename Tfunc>
 			decltype(auto) skip_while(Tfunc && func) const
 			{
-				using Titerator = decltype(Tcontainer::begin());
-				using Tskip_while_iterator = linq_skip_while_iterator<Titerator, Tfunc>;
-				using Tskip_while_container = linq_container<Tcontainer, Tskip_while_iterator>;
-				using Tskip_while_enumerable = linq_enumerable<Tskip_while_container>;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef linq_skip_while_iterator<Titerator, Tfunc>
+					Tskip_while_iterator;
+				typedef linq_container<Tcontainer, Tskip_while_iterator>
+					Tskip_while_container;
+				typedef linq_enumerable<Tskip_while_container>
+					Tskip_while_enumerable;
 				return Tskip_while_enumerable(Tcontainer(*this), std::forward<Tfunc>(func));
 			}
 			template <typename Tfunc>
 			decltype(auto) take_while(Tfunc && func) const
 			{
-				using Titerator = decltype(Tcontainer::begin());
-				using Ttake_while_iterator = linq_take_while_iterator<Titerator, Tfunc>;
-				using Ttake_while_container = linq_container<Tcontainer, Ttake_while_iterator>;
-				using Ttake_while_enumerable = linq_enumerable<Ttake_while_container>;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef linq_take_while_iterator<Titerator, Tfunc>
+					Ttake_while_iterator;
+				typedef linq_container<Tcontainer, Ttake_while_iterator>
+					Ttake_while_container;
+				typedef linq_enumerable<Ttake_while_container>
+					Ttake_while_enumerable;
 				return Ttake_while_enumerable(Tcontainer(*this), std::forward<Tfunc>(func));
 			}
 			template <typename Tthat, typename Touter_key_selector, typename Tinner_key_selector, typename Tresult_selector>
 			decltype(auto) group_join(Tthat && that, Touter_key_selector && fnOuterKeySelector, Tinner_key_selector && fnInnerKeySelector, Tresult_selector && fnResultSelector)
 			{
 				auto linqInner = from(std::forward<Tthat>(that));
-				using Titerator = decltype(Tcontainer::begin());
-				using Tinner = decltype(linqInner);
-				using Tparams = std::tuple<Tinner, Touter_key_selector, Tinner_key_selector, Tresult_selector>;
-				using Treturn = decltype(fnResultSelector(
-					*Tcontainer::begin(),
-					linqInner
-				));
-				using Tgroup_join_iterator = linq_group_join_iterator<Titerator, Tparams, Treturn>;
-				using Tgroup_join_container = linq_container<Tcontainer, Tgroup_join_iterator>;
-				using Tgroup_join_enumerable = linq_enumerable<Tgroup_join_container>;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef decltype(linqInner)
+					Tinner;
+				typedef std::tuple<Tinner, Touter_key_selector, Tinner_key_selector, Tresult_selector>
+					Tparams;
+				typedef decltype(fnResultSelector(*Tcontainer::begin(), linqInner))
+					Treturn;
+				typedef linq_group_join_iterator<Titerator, Tparams, Treturn>
+					Tgroup_join_iterator;
+				typedef linq_container<Tcontainer, Tgroup_join_iterator>
+					Tgroup_join_container;
+				typedef linq_enumerable<Tgroup_join_container>
+					Tgroup_join_enumerable;
 				return Tgroup_join_enumerable(Tcontainer(*this), Tparams(linqInner, std::forward<Touter_key_selector>(fnOuterKeySelector), std::forward<Tinner_key_selector>(fnInnerKeySelector), std::forward<Tresult_selector>(fnResultSelector)));
 			}
 			template <typename Tfunc>
 			decltype(auto) where(Tfunc && func) const
 			{
-				using Titerator = decltype(Tcontainer::begin());
-				using Twhere_iterator = linq_where_iterator<Titerator, Tfunc>;
-				using Twhere_container = linq_container<Tcontainer, Twhere_iterator>;
-				using Twhere_enumerable = linq_enumerable<Twhere_container>;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef linq_where_iterator<Titerator, Tfunc>
+					Twhere_iterator;
+				typedef linq_container<Tcontainer, Twhere_iterator>
+					Twhere_container;
+				typedef linq_enumerable<Twhere_container>
+					Twhere_enumerable;
 				return Twhere_enumerable(Tcontainer(*this), std::forward<Tfunc>(func));
 			}
 			template <typename Tget, typename Tequal>
 			decltype(auto) group_by(Tget && fnGet, Tequal && fnEqual) const
 			{
-				using Tparams = std::tuple<Tget, Tequal>;
-				using Titerator = decltype(Tcontainer::begin());
-				using Tgroup_by_iterator = linq_group_by_iterator<Titerator, Tparams>;
-				using Tgroup_by_container = linq_container<Tcontainer, Tgroup_by_iterator>;
-				using Tgroup_by_enumerable = linq_enumerable<Tgroup_by_container>;
+				typedef std::tuple<Tget, Tequal>
+					Tparams;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef linq_group_by_iterator<Titerator, Tparams>
+					Tgroup_by_iterator;
+				typedef linq_container<Tcontainer, Tgroup_by_iterator>
+					Tgroup_by_container;
+				typedef linq_enumerable<Tgroup_by_container>
+					Tgroup_by_enumerable;
 				return Tgroup_by_enumerable(Tcontainer(*this), Tparams(std::forward<Tget>(fnGet), std::forward<Tequal>(fnEqual)));
 			}
 			template <typename Tget>
 			decltype(auto) group_by(Tget && fnGet) const
 			{
-				using Tequal = std::equal_to<decltype(fnGet(*Tcontainer::begin()))>;
-				return group_by(std::forward<Tget>(fnGet), Tequal());
+				typedef decltype(fnGet(*Tcontainer::begin()))
+					Tvalue;
+				return group_by(std::forward<Tget>(fnGet), std::equal_to<Tvalue>());
 			}
 			template <typename Tget, typename Tequal>
 			decltype(auto) uniq(Tget && fnGet, Tequal && fnEqual) const
 			{
-				using Tparams = std::tuple<Tget, Tequal>;
-				using Titerator = decltype(Tcontainer::begin());
-				using Tuniq_iterator = linq_uniq_iterator<Titerator, Tparams>;
-				using Tuniq_container = linq_container<Tcontainer, Tuniq_iterator>;
-				using Tuniq_enumerable = linq_enumerable<Tuniq_container>;
+				typedef std::tuple<Tget, Tequal>
+					Tparams;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef linq_uniq_iterator<Titerator, Tparams>
+					Tuniq_iterator;
+				typedef linq_container<Tcontainer, Tuniq_iterator>
+					Tuniq_container;
+				typedef linq_enumerable<Tuniq_container>
+					Tuniq_enumerable;
 				return Tuniq_enumerable(Tcontainer(*this), Tparams(std::forward<Tget>(fnGet), std::forward<Tequal>(fnEqual)));
 			}
 			template <typename Tget>
 			decltype(auto) uniq(Tget && fnGet) const
 			{
-				using Tequal = std::equal_to<decltype(fnGet(*Tcontainer::begin()))>;
-				return uniq(std::forward<Tget>(fnGet), Tequal());
+				typedef decltype(fnGet(*Tcontainer::begin()))
+					Tvalue;
+				return uniq(std::forward<Tget>(fnGet), std::equal_to<Tvalue>());
 			}
 			template <typename Tget, typename Tcompare>
 			decltype(auto) order_by(Tget && fnGet, Tcompare && fnCompare) const
 			{
-				using Tparams = std::tuple<Tget, Tcompare>;
-				using Titerator = decltype(Tcontainer::begin());
-				using Torder_by_iterator = linq_order_by_iterator<Titerator, Tparams>;
-				using Torder_by_container = linq_container<Tcontainer, Torder_by_iterator>;
-				using Torder_by_enumerable = linq_enumerable<Torder_by_container>;
+				typedef std::tuple<Tget, Tcompare>
+					Tparams;
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef linq_order_by_iterator<Titerator, Tparams>
+					Torder_by_iterator;
+				typedef linq_container<Tcontainer, Torder_by_iterator>
+					Torder_by_container;
+				typedef linq_enumerable<Torder_by_container>
+					Torder_by_enumerable;
 				return Torder_by_enumerable(Tcontainer(*this), Tparams(std::forward<Tget>(fnGet), std::forward<Tcompare>(fnCompare)));
 			}
 			template <template <typename T> class Tcompare, typename Tget>
 			decltype(auto) order_by(Tget && fnGet) const
 			{
-				using Tvalue = std::decay_t<decltype(fnGet(*Tcontainer::begin()))>;
+				typedef std::decay_t<decltype(fnGet(*Tcontainer::begin()))>
+					Tvalue;
 				return order_by(std::forward<Tget>(fnGet), Tcompare<Tvalue>());
 			}
 			template <template <typename T> class Tcompare>
 			decltype(auto) order_by() const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Tvalue;
 				return order_by(std::identity<Tvalue>(), Tcompare<Tvalue>());
 			}
 			template <typename Tthat, typename Tfunc>
 			decltype(auto) zip(Tthat && that, Tfunc && func)
 			{
 				auto linqThat = from(std::forward<Tthat>(that));
-				using Tlinq_that = std::decay_t<decltype(linqThat)>;
-				using Titerator0 = decltype(this->begin());
-				using Titerator1 = decltype(that.begin());
-				using T = decltype(func(*this->begin(), *that.begin()));
-				using Tzip_iterator = linq_zip_iterator < Titerator0, Titerator1, Tfunc, T>;
-				using Tzip_container = linq_pair_container<Tcontainer, Tlinq_that, Tzip_iterator>;
-				using Tzip_enumerable = linq_enumerable<Tzip_container>;
+				typedef decltype(linqThat)
+					Tthat_linq;
+				typedef decltype(Tcontainer::begin())
+					Titerator0;
+				typedef decltype(that.begin())
+					Titerator1;
+				typedef decltype(func(*Tcontainer::begin(), *that.begin()))
+					Treturn;
+				typedef linq_zip_iterator < Titerator0, Titerator1, Tfunc, Treturn>
+					Tzip_iterator;
+				typedef linq_pair_container<Tcontainer, Tthat_linq, Tzip_iterator>
+					Tzip_container;
+				typedef linq_enumerable<Tzip_container>
+					Tzip_enumerable;
 				return Tzip_enumerable(Tcontainer(*this), std::move(linqThat), std::forward<Tfunc>(func));
 			}
 
@@ -1509,7 +1585,8 @@ namespace jrmwng
 			template <template <typename T, typename... Trest> class Ccontainer, typename... Trest, typename... Targs>
 			decltype(auto) to(Targs && ... args) const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
+				typedef std::decay_t<decltype(*Tcontainer::begin())>
+					Tvalue;
 				return Ccontainer<Tvalue, Trest...>(Tcontainer::begin(), Tcontainer::end(), std::forward<Targs>(args)...);
 			}
 			template <class Ccontainer, typename... Targs>
@@ -1521,7 +1598,8 @@ namespace jrmwng
 		template <typename Tcontainer>
 		decltype(auto) from(Tcontainer & container)
 		{
-			using Tfrom = linq_from<Tcontainer &>;
+			typedef linq_from<Tcontainer &>
+				Tfrom;
 
 			return linq_enumerable<Tfrom>(container);
 		}
