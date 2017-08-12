@@ -555,9 +555,9 @@ namespace jrmwng
 
 					m_itCurrent != m_itEnd &&
 					std::any_of(m_itBegin, itMiddle,
-						[this](auto const & obj)
+						[keyCurrent = m_fnGet(*m_itCurrent), this](auto const & obj)
 				{
-					return m_fnEqual(m_fnGet(obj), m_fnGet(*m_itCurrent));
+					return m_fnEqual(m_fnGet(obj), keyCurrent);
 				});
 
 					++m_itCurrent
