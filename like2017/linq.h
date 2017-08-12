@@ -1089,7 +1089,7 @@ namespace jrmwng
 			template <typename Treturn>
 			Treturn average() const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
 				return average<Treturn>(std::identity<Tvalue>());
 			}
@@ -1131,7 +1131,7 @@ namespace jrmwng
 			}
 			decltype(auto) element_at_or_default(size_t uIndex) const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Treturn;
 
 				for (auto it = Tcontainer::begin(), itEnd = Tcontainer::end(); it != itEnd; ++it)
@@ -1170,7 +1170,7 @@ namespace jrmwng
 			template <typename Tfunc>
 			decltype(auto) first_or_default(Tfunc && func) const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Treturn;
 
 				auto const itBegin = Tcontainer::begin();
@@ -1226,7 +1226,7 @@ namespace jrmwng
 			template <typename Tfunc>
 			decltype(auto) last_or_default(Tfunc && func) const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Treturn;
 
 				auto const itBegin = Tcontainer::begin();
@@ -1307,7 +1307,7 @@ namespace jrmwng
 			template <typename Tthat>
 			bool sequential_equal(Tthat && that) const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
 				return sequential_equal(std::forward<Tthat>(that), std::equal_to<Tvalue>());
 			}
@@ -1319,7 +1319,7 @@ namespace jrmwng
 			template <typename Treturn>
 			Treturn sum() const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
 				return aggregate<std::plus>(Treturn(0));
 			}
@@ -1365,7 +1365,7 @@ namespace jrmwng
 			template <typename Tthat>
 			decltype(auto) except(Tthat && that) const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
 				return except(std::forward<Tthat>(that), std::equal_to<Tvalue>());
 			}
@@ -1381,7 +1381,7 @@ namespace jrmwng
 			template <typename Tthat>
 			decltype(auto) intersection(Tthat && that) const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
 				return intersection(std::forward<Tthat>(that), std::equal_to<Tvalue>());
 			}
@@ -1548,14 +1548,14 @@ namespace jrmwng
 			template <template <typename T> class Tcompare, typename Tget>
 			decltype(auto) order_by(Tget && fnGet) const
 			{
-				typedef std::decay_t<decltype(fnGet(*Tcontainer::begin()))>
+				typedef typename std::decay<decltype(fnGet(*Tcontainer::begin()))>::type
 					Tvalue;
 				return order_by(std::forward<Tget>(fnGet), Tcompare<Tvalue>());
 			}
 			template <template <typename T> class Tcompare>
 			decltype(auto) order_by() const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
 				return order_by(std::identity<Tvalue>(), Tcompare<Tvalue>());
 			}
@@ -1585,7 +1585,7 @@ namespace jrmwng
 			template <template <typename T, typename... Trest> class Ccontainer, typename... Trest, typename... Targs>
 			decltype(auto) to(Targs && ... args) const
 			{
-				typedef std::decay_t<decltype(*Tcontainer::begin())>
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
 				return Ccontainer<Tvalue, Trest...>(Tcontainer::begin(), Tcontainer::end(), std::forward<Targs>(args)...);
 			}
