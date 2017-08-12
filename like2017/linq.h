@@ -1284,13 +1284,12 @@ namespace jrmwng
 				return aggregate<std::multiplies>(Treturn(1));
 			}
 			template <typename Tthat, typename Tequal>
-			bool sequential_equal(Tthat && that, Tequal && fnEqual) const
+			bool sequential_equal(Tthat const & that, Tequal && fnEqual) const
 			{
-				auto const linqThat = from(std::forward<Tthat>(that));
 				auto const itThisBegin = begin();
 				auto const itThisEnd = end();
-				auto const itThatBegin = linqThat.begin();
-				auto const itThatEnd = linqThat.end();
+				auto const itThatBegin = that.begin();
+				auto const itThatEnd = that.end();
 				auto itThis = itThisBegin;
 				auto itThat = itThatBegin;
 				{
@@ -1305,11 +1304,11 @@ namespace jrmwng
 				return itThis == itThisEnd && itThat == itThatEnd;
 			}
 			template <typename Tthat>
-			bool sequential_equal(Tthat && that) const
+			bool sequential_equal(Tthat const & that) const
 			{
 				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
-				return sequential_equal(std::forward<Tthat>(that), std::equal_to<Tvalue>());
+				return sequential_equal(that, std::equal_to<Tvalue>());
 			}
 			template <typename Treturn, typename Tget>
 			Treturn sum(Tget && fnGet) const
@@ -1335,55 +1334,48 @@ namespace jrmwng
 			template <typename Tthat>
 			decltype(auto) concat(Tthat && that) const
 			{
-				auto linqThat = from(std::forward<Tthat>(that));
-				typedef decltype(linqThat)
-					Tthat_linq;
-				typedef typename Tthat_linq::container_type
-					Tthat_container;
 				typedef decltype(Tcontainer::begin())
 					Titerator0;
-				typedef decltype(linqThat.begin())
+				typedef decltype(that.begin())
 					Titerator1;
 				typedef linq_concat_iterator<Titerator0, Titerator1>
 					Tconcat_iterator;
-				typedef linq_pair_container<Tcontainer, Tthat_container, Tconcat_iterator>
+				typedef linq_pair_container<Tcontainer, Tthat, Tconcat_iterator>
 					Tconcat_container;
 				typedef linq_enumerable<Tconcat_container>
 					Tconcat_enumerable;
-				return Tconcat_enumerable(Tcontainer(*this), std::forward<Tthat_linq>(linqThat), Tcontainer::end());
+				return Tconcat_enumerable(Tcontainer(*this), std::forward<Tthat>(that), Tcontainer::end());
 			}
 			// TODO: distinct
 			template <typename Tthat, typename Tequal>
-			decltype(auto) except(Tthat && that, Tequal && fnEqual) const
+			decltype(auto) except(Tthat const & that, Tequal && fnEqual) const
 			{
-				auto linqThat = from(std::forward<Tthat>(that));
-				return where([itBegin = linqThat.begin(), itEnd = linqThat.end(), fnEqual](auto const & valueCurrent)
+				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
 				{
 					return !std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
 				});
 			}
 			template <typename Tthat>
-			decltype(auto) except(Tthat && that) const
+			decltype(auto) except(Tthat const & that) const
 			{
 				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
-				return except(std::forward<Tthat>(that), std::equal_to<Tvalue>());
+				return except(that, std::equal_to<Tvalue>());
 			}
 			template <typename Tthat, typename Tequal>
-			decltype(auto) intersection(Tthat && that, Tequal && fnEqual) const
+			decltype(auto) intersection(Tthat const & that, Tequal && fnEqual) const
 			{
-				auto linqThat = from(std::forward<Tthat>(that));
-				return where([itBegin = linqThat.begin(), itEnd = linqThat.end(), fnEqual](auto const & valueCurrent)
+				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
 				{
 					return std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
 				});
 			}
 			template <typename Tthat>
-			decltype(auto) intersection(Tthat && that) const
+			decltype(auto) intersection(Tthat const & that) const
 			{
 				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
 					Tvalue;
-				return intersection(std::forward<Tthat>(that), std::equal_to<Tvalue>());
+				return intersection(that, std::equal_to<Tvalue>());
 			}
 			template <typename Tfunc>
 			decltype(auto) select(Tfunc && func) const
@@ -1471,7 +1463,7 @@ namespace jrmwng
 					Tgroup_join_container;
 				typedef linq_enumerable<Tgroup_join_container>
 					Tgroup_join_enumerable;
-				return Tgroup_join_enumerable(Tcontainer(*this), Tparams(linqInner, std::forward<Touter_key_selector>(fnOuterKeySelector), std::forward<Tinner_key_selector>(fnInnerKeySelector), std::forward<Tresult_selector>(fnResultSelector)));
+				return Tgroup_join_enumerable(Tcontainer(*this), Tparams(std::move(linqInner), std::forward<Touter_key_selector>(fnOuterKeySelector), std::forward<Tinner_key_selector>(fnInnerKeySelector), std::forward<Tresult_selector>(fnResultSelector)));
 			}
 			template <typename Tfunc>
 			decltype(auto) where(Tfunc && func) const
@@ -1562,9 +1554,6 @@ namespace jrmwng
 			template <typename Tthat, typename Tfunc>
 			decltype(auto) zip(Tthat && that, Tfunc && func)
 			{
-				auto linqThat = from(std::forward<Tthat>(that));
-				typedef decltype(linqThat)
-					Tthat_linq;
 				typedef decltype(Tcontainer::begin())
 					Titerator0;
 				typedef decltype(that.begin())
@@ -1573,11 +1562,11 @@ namespace jrmwng
 					Treturn;
 				typedef linq_zip_iterator < Titerator0, Titerator1, Tfunc, Treturn>
 					Tzip_iterator;
-				typedef linq_pair_container<Tcontainer, Tthat_linq, Tzip_iterator>
+				typedef linq_pair_container<Tcontainer, Tthat, Tzip_iterator>
 					Tzip_container;
 				typedef linq_enumerable<Tzip_container>
 					Tzip_enumerable;
-				return Tzip_enumerable(Tcontainer(*this), std::move(linqThat), std::forward<Tfunc>(func));
+				return Tzip_enumerable(Tcontainer(*this), std::forward<Tthat>(that), std::forward<Tfunc>(func));
 			}
 
 			//
