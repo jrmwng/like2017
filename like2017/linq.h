@@ -13,6 +13,9 @@ namespace jrmwng
 {
 	namespace linq
 	{
+		template <typename Tcontainer>
+		class linq_enumerable;
+
 		template <typename Tcontainer, typename Tparams, typename Titerator>
 		class linq_container
 		{
@@ -98,14 +101,11 @@ namespace jrmwng
 
 		template <typename Titerator>
 		class linq_iterator
-			: public std::iterator_traits<Titerator>
 		{
 		protected:
 			Titerator m_itCurrent;
 
 		public:
-			typedef std::forward_iterator_tag iterator_category;
-
 			linq_iterator(Titerator && itCurrent)
 				: m_itCurrent(std::forward<Titerator>(itCurrent))
 			{}
@@ -128,9 +128,10 @@ namespace jrmwng
 			}
 		};
 
-		template <typename Titerator, typename Tfunc>
+		template <typename Titerator, typename Tfunc, typename Treturn>
 		class linq_select_iterator
 			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
 		{
 			Tfunc const m_func;
 		public:
@@ -139,8 +140,9 @@ namespace jrmwng
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_func(std::forward<Tfunc>(func))
 			{}
-			decltype(auto) operator * () const
+			Treturn operator * () const
 			{
+				static_assert(std::is_same<Treturn, decltype(m_func(*m_itCurrent))>::value, "Mismatch of return type 'Treturn'");
 				return m_func(*m_itCurrent);
 			}
 			linq_select_iterator & operator = (linq_select_iterator const & that)
@@ -160,9 +162,10 @@ namespace jrmwng
 				return *this;
 			}
 		};
-		template <typename Titerator, typename Tmany_iterator, typename Tparams>
+		template <typename Titerator, typename Tmany_iterator, typename Tparams, typename Treturn>
 		class linq_select_many_iterator
 			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
 		{
 			std::array<char, sizeof(Tmany_iterator)> m_itManyCurrent;
 			std::array<char, sizeof(Tmany_iterator)> m_itManyEnd;
@@ -248,8 +251,9 @@ namespace jrmwng
 				}
 				return *this;
 			}
-			decltype(auto) operator * () const
+			Treturn operator * () const
 			{
+				static_assert(std::is_same<Treturn, decltype(std::get<1>(m_params)(*m_itCurrent, *read<Tmany_iterator>(m_itManyCurrent)))>::value, "Mismatch of return type 'Treturn'");
 				return std::get<1>(m_params)(*m_itCurrent, *read<Tmany_iterator>(m_itManyCurrent));
 			}
 			linq_select_many_iterator & operator ++ ()
@@ -296,6 +300,7 @@ namespace jrmwng
 		template <typename Titerator, typename Tfunc>
 		class linq_where_iterator
 			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, typename Titerator::value_type>
 		{
 			Titerator const m_itEnd;
 			Tfunc const m_func;
@@ -339,6 +344,7 @@ namespace jrmwng
 		template <typename Titerator, typename Tparams>
 		class linq_group_by_iterator
 			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, linq_enumerable<linq_range<Titerator>>>
 		{
 			Titerator m_itNext;
 			Titerator const m_itBegin;
@@ -409,6 +415,7 @@ namespace jrmwng
 			{
 				using Trange = linq_range<Titerator>;
 				using Trange_enumerable = linq_enumerable<Trange>;
+				static_assert(std::is_same<Trange_enumerable, value_type>::value, "Mismatch of return type 'Treturn'");
 				return Trange_enumerable(m_itCurrent, m_itNext);
 			}
 			decltype(auto) key() const
@@ -427,6 +434,7 @@ namespace jrmwng
 		template <typename Titerator, typename Tparams>
 		class linq_order_by_iterator
 			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, typename Titerator::value_type>
 		{
 			Titerator m_itNext;
 			Titerator const m_itBegin;
@@ -533,8 +541,9 @@ namespace jrmwng
 
 		template <typename Titerator0, typename Titerator1>
 		class linq_concat_iterator
-			: public std::iterator_traits<Titerator0>
+			: public std::iterator<std::forward_iterator_tag, typename Titerator0::value_type>
 		{
+			static_assert(std::is_same<typename Titerator0::value_type, typename Titerator1::value_type>::value, "Mismatch of iterator value type");
 			Titerator0 m_it0;
 			Titerator1 m_it1;
 			Titerator0 const m_itEnd0;
@@ -594,6 +603,7 @@ namespace jrmwng
 		template <typename Titerator, typename Tfunc>
 		class linq_skip_while_iterator
 			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, typename Titerator::value_type>
 		{
 			Titerator const m_itEnd;
 			Tfunc const m_func;
@@ -628,6 +638,7 @@ namespace jrmwng
 		template <typename Titerator, typename Tfunc>
 		class linq_take_while_iterator
 			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, typename Titerator::value_type>
 		{
 			Titerator const m_itEnd;
 			Tfunc const m_func;
@@ -666,7 +677,7 @@ namespace jrmwng
 		};
 		template <typename Titerator0, typename Titerator1, typename Tfunc, typename Treturn>
 		class linq_zip_iterator
-			: public std::iterator<std::forward_iterator_tag, Treturn>
+			: public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
 		{
 			Titerator0 m_it0;
 			Titerator1 m_it1;
@@ -1047,7 +1058,8 @@ namespace jrmwng
 			decltype(auto) select(Tfunc && func) const
 			{
 				using Titerator = decltype(Tcontainer::begin());
-				using Tselect_iterator = linq_select_iterator<Titerator, Tfunc>;
+				using Treturn = decltype(func(*Tcontainer::begin()));
+				using Tselect_iterator = linq_select_iterator<Titerator, Tfunc, Treturn>;
 				using Tselect_container = linq_container<linq_enumerable<Tcontainer>, Tfunc, Tselect_iterator>;
 				using Tselect_enumerable = linq_enumerable<Tselect_container>;
 				return Tselect_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tfunc>(func));
@@ -1058,7 +1070,8 @@ namespace jrmwng
 				using Titerator = decltype(Tcontainer::begin());
 				using Tmany_iterator = decltype(fnMany(*Tcontainer::begin()).begin());
 				using Tparams = std::tuple<Tmany, Tselect>;
-				using Tselect_many_iterator = linq_select_many_iterator<Titerator, Tmany_iterator, Tparams>;
+				using Treturn = decltype(fnSelect(*Tcontainer::begin(), *fnMany(*Tcontainer::begin()).begin()));
+				using Tselect_many_iterator = linq_select_many_iterator<Titerator, Tmany_iterator, Tparams, Treturn>;
 				using Tselect_many_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Tselect_many_iterator>;
 				using Tselect_many_enumerable = linq_enumerable<Tselect_many_container>;
 				return Tselect_many_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(std::forward<Tmany>(fnMany), std::forward<Tselect>(fnSelect)));
