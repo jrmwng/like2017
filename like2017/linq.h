@@ -493,6 +493,72 @@ namespace jrmwng
 				return *this;
 			}
 		};
+		template <typename Titerator, typename Tequal>
+		class linq_distinct_iterator
+			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, typename Titerator::value_type>
+		{
+			Titerator const m_itBegin;
+			Titerator const m_itEnd;
+			Tequal const m_fnEqual;
+
+			void debug_check(linq_distinct_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (m_itBegin != that.m_itBegin ||
+					m_itEnd != that.m_itEnd ||
+					typeid(m_fnEqual) != typeid(that.m_fnEqual))
+				{
+					__debugbreak();
+				}
+#endif
+			}
+		public:
+			typedef Tequal
+				params_type;
+
+			template <typename Tcontainer>
+			linq_distinct_iterator(Titerator && itCurrent, Tcontainer const & container, Tequal const & fnEqual)
+				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
+				, m_itBegin(container.begin())
+				, m_itEnd(container.end())
+				, m_fnEqual(fnEqual)
+			{}
+			typename linq_distinct_iterator & operator = (linq_distinct_iterator const & that)
+			{
+				DEBUG_CHECK(that);
+				m_itCurrent = that.m_itCurrent;
+				return *this;
+			}
+			bool operator == (linq_distinct_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent == that.m_itCurrent;
+			}
+			bool operator != (linq_distinct_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_itCurrent != that.m_itCurrent;
+			}
+			typename linq_distinct_iterator & operator ++ ()
+			{
+				for (
+					auto const itMiddle = ++m_itCurrent;
+
+					m_itCurrent != m_itEnd &&
+					std::any_of(m_itBegin, itMiddle,
+						[keyCurrent = *m_itCurrent, this](auto const & obj)
+				{
+					return m_fnEqual(obj, keyCurrent);
+				});
+
+					++m_itCurrent
+					)
+				{
+				}
+				return *this;
+			}
+		};
 		template <typename Titerator, typename Tparams>
 		class linq_group_by_iterator
 			: public linq_iterator<Titerator>
@@ -1371,6 +1437,25 @@ namespace jrmwng
 				typedef linq_enumerable<Tconcat_container>
 					Tconcat_enumerable;
 				return Tconcat_enumerable(Tcontainer(*this), std::forward<Tthat>(that), Tcontainer::end());
+			}
+			template <typename Tequal>
+			decltype(auto) distinct(Tequal && fnEqual) const
+			{
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef linq_distinct_iterator<Titerator, Tequal>
+					Tdistinct_iterator;
+				typedef linq_container<Tcontainer, Tdistinct_iterator>
+					Tdistinct_container;
+				typedef linq_enumerable<Tdistinct_container>
+					Tdistinct_enumerable;
+				return Tdistinct_enumerable(Tcontainer(*this), std::forward<Tequal>(fnEqual));
+			}
+			decltype(auto) distinct() const
+			{
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
+					Tvalue;
+				return distinct(std::equal_to<Tvalue>());
 			}
 			// TODO: distinct
 			template <typename Tthat, typename Tequal>
