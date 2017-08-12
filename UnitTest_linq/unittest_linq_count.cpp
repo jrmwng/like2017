@@ -15,7 +15,7 @@ namespace UnitTest_linq
 
 			std::vector<Tsimd_string> vectorName0({ "Jeremy", "Cally" });
 
-			Assert::AreEqual<int>(2, jrmwng::linq::from(vectorName0).count());
+			Assert::IsTrue(2 == jrmwng::linq::from(vectorName0).count());
 		}
 
 	};
