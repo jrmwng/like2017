@@ -362,75 +362,6 @@ namespace jrmwng
 				return !(*this == that);
 			}
 		};
-		template <typename Titerator, typename Tparams, typename Treturn>
-		class linq_group_join_iterator
-			: public linq_iterator<Titerator>
-			, public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
-		{
-			typedef typename std::tuple_element<0, Tparams>::type
-				Tinner;
-			typedef typename std::tuple_element<1, Tparams>::type
-				Touter_key_selector;
-			typedef typename std::tuple_element<2, Tparams>::type
-				Tinner_key_selector;
-			typedef typename std::tuple_element<3, Tparams>::type
-				Tresult_selector;
-
-			Tinner const m_Inner;
-			Touter_key_selector const m_fnOuterKeySelector;
-			Tinner_key_selector const m_fnInnerKeySelector;
-			Tresult_selector const m_fnResultSelector;
-
-			void debug_check(linq_group_join_iterator const & that) const
-			{
-#ifdef _DEBUG
-				if (typeid(m_Inner) != typeid(that.m_Inner) ||
-					typeid(m_fnOuterKeySelector) != typeid(that.m_fnOuterKeySelector) ||
-					typeid(m_fnInnerKeySelector) != typeid(that.m_fnInnerKeySelector) ||
-					typeid(m_fnResultSelector) != typeid(that.m_fnResultSelector))
-				{
-					__debugbreak();
-				}
-#endif
-			}
-		public:
-			typedef Tparams
-				params_type;
-
-			template <typename Tcontainer>
-			linq_group_join_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
-				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
-				, m_Inner(std::get<0>(params))
-				, m_fnOuterKeySelector(std::get<1>(params))
-				, m_fnInnerKeySelector(std::get<2>(params))
-				, m_fnResultSelector(std::get<3>(params))
-			{}
-			bool operator == (linq_group_join_iterator const & that) const
-			{
-				DEBUG_CHECK(that);
-				return m_itCurrent == that.m_itCurrent;
-			}
-			bool operator != (linq_group_join_iterator const & that) const
-			{
-				DEBUG_CHECK(that);
-				return m_itCurrent != that.m_itCurrent;
-			}
-			linq_group_join_iterator & operator = (linq_group_join_iterator const & that)
-			{
-				DEBUG_CHECK(that);
-				m_itCurrent = that.m_itCurrent;
-				return *this;
-			}
-			decltype(auto) operator * () const
-			{
-				return m_fnResultSelector(
-					*m_itCurrent,
-					m_Inner.where([keyOuter = m_fnOuterKeySelector(*m_itCurrent), this](auto const & objInner)
-				{
-					return keyOuter == m_fnInnerKeySelector(objInner);
-				}));
-			}
-		};
 		template <typename Titerator, typename Tfunc>
 		class linq_where_iterator
 			: public linq_iterator<Titerator>
@@ -1559,22 +1490,17 @@ namespace jrmwng
 			template <typename Tthat, typename Touter_key_selector, typename Tinner_key_selector, typename Tresult_selector>
 			decltype(auto) group_join(Tthat && that, Touter_key_selector && fnOuterKeySelector, Tinner_key_selector && fnInnerKeySelector, Tresult_selector && fnResultSelector)
 			{
-				auto linqThat = from(std::forward<Tthat>(that));
-				typedef decltype(Tcontainer::begin())
-					Titerator;
-				typedef decltype(linqThat)
-					Tinner;
-				typedef std::tuple<Tinner, Touter_key_selector, Tinner_key_selector, Tresult_selector>
-					Tparams;
-				typedef decltype(fnResultSelector(*Tcontainer::begin(), linqThat))
-					Treturn;
-				typedef linq_group_join_iterator<Titerator, Tparams, Treturn>
-					Tgroup_join_iterator;
-				typedef linq_container<Tcontainer, Tgroup_join_iterator>
-					Tgroup_join_container;
-				typedef linq_enumerable<Tgroup_join_container>
-					Tgroup_join_enumerable;
-				return Tgroup_join_enumerable(Tcontainer(*this), Tparams(std::move(linqThat), std::forward<Touter_key_selector>(fnOuterKeySelector), std::forward<Tinner_key_selector>(fnInnerKeySelector), std::forward<Tresult_selector>(fnResultSelector)));
+				return select([linqInner = from(std::forward<Tthat>(that)), fnOuterKeySelector, fnInnerKeySelector, fnResultSelector](auto const & objOuter)
+				{
+					return fnResultSelector(
+						objOuter,
+						linqInner
+							.where([keyOuter = fnOuterKeySelector(objOuter), fnInnerKeySelector](auto const & objInner)
+						{
+							return keyOuter == fnInnerKeySelector(objInner);
+						})
+					);
+				});
 			}
 			template <typename Tthat, typename Touter_key_selector, typename Tinner_key_selector, typename Tresult_selector>
 			decltype(auto) join(Tthat && that, Touter_key_selector && fnOuterKeySelector, Tinner_key_selector && fnInnerKeySelector, Tresult_selector && fnResultSelector)
