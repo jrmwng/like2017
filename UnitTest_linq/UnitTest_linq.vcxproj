@@ -172,6 +172,7 @@
     <ClCompile Include="unittest_linq_take_while.cpp" />
     <ClCompile Include="unittest_linq_to.cpp" />
     <ClCompile Include="unittest_linq_where.cpp" />
+    <ClCompile Include="unittest_linq_zip.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

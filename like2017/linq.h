@@ -33,24 +33,26 @@ namespace jrmwng
 				return Titerator(m_container.end(), m_container, Tparams(m_params));
 			}
 		};
-		template <typename Tcontainer0, typename Tcontainer1, typename Titerator>
-		class linq_concat_container
+		template <typename Tcontainer0, typename Tcontainer1, typename Tparams, typename Titerator>
+		class linq_pair_container
 		{
 			Tcontainer0 const m_container0;
 			Tcontainer1 const m_container1;
+			Tparams const m_params;
 		public:
-			linq_concat_container(Tcontainer0 && container0, Tcontainer1 && container1)
+			linq_pair_container(Tcontainer0 && container0, Tcontainer1 && container1, Tparams && params)
 				: m_container0(std::forward<Tcontainer0>(container0))
 				, m_container1(std::forward<Tcontainer1>(container1))
+				, m_params(std::forward<Tparams>(params))
 			{}
 
 			Titerator begin() const
 			{
-				return Titerator(m_container0.begin(), m_container1.begin(), m_container0, m_container1);
+				return Titerator(m_container0.begin(), m_container1.begin(), m_params);
 			}
 			Titerator end() const
 			{
-				return Titerator(m_container0.end(), m_container1.end(), m_container0, m_container1);
+				return Titerator(m_container0.end(), m_container1.end(), m_params);
 			}
 		};
 
@@ -539,11 +541,10 @@ namespace jrmwng
 		public:
 			typedef std::forward_iterator_tag iterator_category;
 
-			template <typename Tcontainer0, typename Tcontainer1>
-			linq_concat_iterator(Titerator0 && it0, Titerator1 && it1, Tcontainer0 const & container0, Tcontainer1 const & container1)
+			linq_concat_iterator(Titerator0 && it0, Titerator1 && it1, Titerator0 const & itEnd0)
 				: m_it0(std::forward<Titerator0>(it0))
 				, m_it1(std::forward<Titerator1>(it1))
-				, m_itEnd0(container0.end())
+				, m_itEnd0(itEnd0)
 			{}
 			linq_concat_iterator & operator = (linq_concat_iterator const & that)
 			{
@@ -660,6 +661,57 @@ namespace jrmwng
 				{
 					m_itCurrent = m_itEnd;
 				}
+				return *this;
+			}
+		};
+		template <typename Titerator0, typename Titerator1, typename Tfunc, typename Treturn>
+		class linq_zip_iterator
+			: public std::iterator<std::forward_iterator_tag, Treturn>
+		{
+			Titerator0 m_it0;
+			Titerator1 m_it1;
+			Tfunc const m_func;
+		public:
+			typedef std::forward_iterator_tag iterator_category;
+
+			linq_zip_iterator(Titerator0 && it0, Titerator1 && it1, Tfunc const & func)
+				: m_it0(std::forward<Titerator0>(it0))
+				, m_it1(std::forward<Titerator1>(it1))
+				, m_func(func)
+			{}
+
+			bool operator == (linq_zip_iterator const & that) const
+			{
+				return m_it0 == that.m_it0 && m_it1 == that.m_it1;
+			}
+			bool operator != (linq_zip_iterator const & that) const
+			{
+				return m_it0 != that.m_it0 || m_it1 != that.m_it1;
+			}
+
+			Treturn operator * () const
+			{
+				static_assert(std::is_same<Treturn, decltype(m_func(*m_it0, *m_it1))>::value, "Mismatch of return type 'Treturn'");
+				return m_func(*m_it0, *m_it1);
+			}
+
+			linq_zip_iterator & operator = (linq_zip_iterator const & that)
+			{
+#ifdef _DEBUG
+				if (memcmp(&m_func, &that.m_func, sizeof(Tfunc)))
+				{
+					__debugbreak();
+				}
+#endif
+				m_it0 = that.m_it0;
+				m_it1 = that.m_it1;
+				return *this;
+			}
+
+			linq_zip_iterator & operator ++ ()
+			{
+				++m_it0;
+				++m_it1;
 				return *this;
 			}
 		};
@@ -956,9 +1008,9 @@ namespace jrmwng
 				using Titerator0 = decltype(Tcontainer::begin());
 				using Titerator1 = decltype(linqThat.begin());
 				using Tconcat_iterator = linq_concat_iterator<Titerator0, Titerator1>;
-				using Tconcat_container = linq_concat_container<linq_enumerable<Tcontainer>, Tlinq_that, Tconcat_iterator>;
+				using Tconcat_container = linq_pair_container<linq_enumerable<Tcontainer>, Tlinq_that, Titerator0, Tconcat_iterator>;
 				using Tconcat_enumerable = linq_enumerable<Tconcat_container>;
-				return Tconcat_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tlinq_that>(linqThat));
+				return Tconcat_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tlinq_that>(linqThat), Tcontainer::end());
 			}
 			// TODO: distinct
 			template <typename Tthat, typename Tequal>
@@ -1084,6 +1136,19 @@ namespace jrmwng
 				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
 				return order_by(std::identity<Tvalue>(), Tcompare<Tvalue>());
 			}
+			template <typename Tthat, typename Tfunc>
+			decltype(auto) zip(Tthat && that, Tfunc && func)
+			{
+				auto linqThat = from(std::forward<Tthat>(that));
+				using Tlinq_that = std::decay_t<decltype(linqThat)>;
+				using Titerator0 = decltype(this->begin());
+				using Titerator1 = decltype(that.begin());
+				using T = decltype(func(*this->begin(), *that.begin()));
+				using Tzip_iterator = linq_zip_iterator < Titerator0, Titerator1, Tfunc, T>;
+				using Tzip_container = linq_pair_container<linq_enumerable<Tcontainer>, Tlinq_that, Tfunc, Tzip_iterator>;
+				using Tzip_enumerable = linq_enumerable<Tzip_container>;
+				return Tzip_enumerable(linq_enumerable<Tcontainer>(*this), std::move(linqThat), std::forward<Tfunc>(func));
+			}
 
 			//
 
@@ -1096,7 +1161,6 @@ namespace jrmwng
 			template <class Ccontainer, typename... Targs>
 			decltype(auto) to(Targs && ... args) const
 			{
-				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
 				return Ccontainer(Tcontainer::begin(), Tcontainer::end(), std::forward<Targs>(args)...);
 			}
 		};
