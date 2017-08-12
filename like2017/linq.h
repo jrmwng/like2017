@@ -307,6 +307,72 @@ namespace jrmwng
 				return !(*this == that);
 			}
 		};
+		template <typename Titerator, typename Tparams, typename Treturn>
+		class linq_group_join_iterator
+			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, typename std::remove_reference<Treturn>::type>
+		{
+			using Tinner =
+				typename std::tuple_element<0, Tparams>::type;
+			using Touter_key_selector =
+				typename std::tuple_element<1, Tparams>::type;
+			using Tinner_key_selector =
+				typename std::tuple_element<2, Tparams>::type;
+			using Tresult_selector =
+				typename std::tuple_element<3, Tparams>::type;
+
+			Tinner const m_Inner;
+			Touter_key_selector const m_fnOuterKeySelector;
+			Tinner_key_selector const m_fnInnerKeySelector;
+			Tresult_selector const m_fnResultSelector;
+
+			void debug_check(linq_group_join_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (memcmp(&m_Inner, &that.m_Inner, sizeof(Tinner)) ||
+					memcmp(&m_fnOuterKeySelector, &that.m_fnOuterKeySelector, sizeof(Touter_key_selector)) ||
+					memcmp(&m_fnInnerKeySelector, &that.m_fnInnerKeySelector, sizeof(Tinner_key_selector)) ||
+					memcmp(&m_fnResultSelector, &that.m_fnResultSelector, sizeof(Tresult_selector)))
+				{
+					__debugbreak();
+				}
+#endif
+			}
+		public:
+			template <typename Tcontainer>
+			linq_group_join_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
+				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
+				, m_Inner(std::get<0>(params))
+				, m_fnOuterKeySelector(std::get<1>(params))
+				, m_fnInnerKeySelector(std::get<2>(params))
+				, m_fnResultSelector(std::get<3>(params))
+			{}
+			bool operator == (linq_group_join_iterator const & that) const
+			{
+				debug_check(that);
+				return m_itCurrent == that.m_itCurrent;
+			}
+			bool operator != (linq_group_join_iterator const & that) const
+			{
+				debug_check(that);
+				return m_itCurrent != that.m_itCurrent;
+			}
+			linq_group_join_iterator & operator = (linq_group_join_iterator const & that)
+			{
+				debug_check(that);
+				m_itCurrent = that.m_itCurrent;
+				return *this;
+			}
+			decltype(auto) operator * () const
+			{
+				return m_fnResultSelector(
+					*m_itCurrent,
+					m_Inner.where([keyOuter = m_fnOuterKeySelector(*m_itCurrent), this](auto const & objInner)
+				{
+					return keyOuter == m_fnInnerKeySelector(objInner);
+				}));
+			}
+		};
 		template <typename Titerator, typename Tfunc>
 		class linq_where_iterator
 			: public linq_iterator<Titerator>
@@ -1048,7 +1114,7 @@ namespace jrmwng
 				return aggregate<std::multiplies>(Treturn(1));
 			}
 			template <typename Tthat, typename Tequal>
-			bool sequential_equal(Tthat && that, Tequal && fnEqual)
+			bool sequential_equal(Tthat && that, Tequal && fnEqual) const
 			{
 				auto const linqThat = from(std::forward<Tthat>(that));
 				auto const itThisBegin = begin();
@@ -1069,7 +1135,7 @@ namespace jrmwng
 				return itThis == itThisEnd && itThat == itThatEnd;
 			}
 			template <typename Tthat>
-			bool sequential_equal(Tthat && that)
+			bool sequential_equal(Tthat && that) const
 			{
 				using Tvalue = std::decay_t<decltype(*Tcontainer::begin())>;
 				return sequential_equal(std::forward<Tthat>(that), std::equal_to<Tvalue>());
@@ -1184,6 +1250,22 @@ namespace jrmwng
 				using Ttake_while_container = linq_container<linq_enumerable<Tcontainer>, Tfunc, Ttake_while_iterator>;
 				using Ttake_while_enumerable = linq_enumerable<Ttake_while_container>;
 				return Ttake_while_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tfunc>(func));
+			}
+			template <typename Tthat, typename Touter_key_selector, typename Tinner_key_selector, typename Tresult_selector>
+			decltype(auto) group_join(Tthat && that, Touter_key_selector && fnOuterKeySelector, Tinner_key_selector && fnInnerKeySelector, Tresult_selector && fnResultSelector)
+			{
+				auto linqInner = from(std::forward<Tthat>(that));
+				using Titerator = decltype(Tcontainer::begin());
+				using Tinner = decltype(linqInner);
+				using Tparams = std::tuple<Tinner, Touter_key_selector, Tinner_key_selector, Tresult_selector>;
+				using Treturn = decltype(fnResultSelector(
+					*Tcontainer::begin(),
+					linqInner
+				));
+				using Tgroup_join_iterator = linq_group_join_iterator<Titerator, Tparams, Treturn>;
+				using Tgroup_join_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Tgroup_join_iterator>;
+				using Tgroup_join_enumerable = linq_enumerable<Tgroup_join_container>;
+				return Tgroup_join_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(linqInner, std::forward<Touter_key_selector>(fnOuterKeySelector), std::forward<Tinner_key_selector>(fnInnerKeySelector), std::forward<Tresult_selector>(fnResultSelector)));
 			}
 			template <typename Tfunc>
 			decltype(auto) where(Tfunc && func) const
