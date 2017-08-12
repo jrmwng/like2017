@@ -160,6 +160,7 @@
     <ClCompile Include="unittest_linq_except.cpp" />
     <ClCompile Include="unittest_linq_from.cpp" />
     <ClCompile Include="unittest_linq_element.cpp" />
+    <ClCompile Include="unittest_linq_group_by.cpp" />
     <ClCompile Include="unittest_linq_uniq.cpp" />
     <ClCompile Include="unittest_linq_intersection.cpp" />
     <ClCompile Include="unittest_linq_order_by.cpp" />

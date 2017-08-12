@@ -2,6 +2,7 @@
 
 /* Author: jrmwng @ 2017 */
 
+#include <functional>
 #include <algorithm>
 #include <iterator>
 #include <numeric>
@@ -351,6 +352,76 @@ namespace jrmwng
 			}
 		};
 		template <typename Titerator, typename Tparams>
+		class linq_group_by_iterator
+			: public linq_iterator<Titerator>
+			, public std::iterator<std::forward_iterator_tag, linq_enumerable<linq_range<Titerator>>>
+		{
+			using Tget =
+				typename std::tuple_element<0, Tparams>::type;
+			using Tequal =
+				typename std::tuple_element<1, Tparams>::type;
+
+			Titerator const m_itBegin;
+			Titerator const m_itEnd;
+			Tget const m_fnGet;
+			Tequal const m_fnEqual;
+		public:
+			template <typename Tcontainer>
+			linq_group_by_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams const & params)
+				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
+				, m_itBegin(container.begin())
+				, m_itEnd(container.end())
+				, m_fnGet(std::get<0>(params))
+				, m_fnEqual(std::get<1>(params))
+			{}
+			typename linq_group_by_iterator & operator = (linq_group_by_iterator const & that)
+			{
+#ifdef _DEBUG
+				if (m_itBegin != that.m_itBegin ||
+					m_itEnd != that.m_itEnd ||
+					memcmp(&m_fnGet, &that.m_fnGet, sizeof(Tget)) ||
+					memcmp(&m_fnEqual, &that.m_fnEqual, sizeof(Tequal)))
+				{
+					__debugbreak();
+				}
+#endif
+				m_itCurrent = that.m_itCurrent;
+				return *this;
+			}
+			typename linq_group_by_iterator & operator ++ ()
+			{
+				for (
+					auto const itMiddle = ++m_itCurrent;
+
+					m_itCurrent != m_itEnd &&
+					std::any_of(m_itBegin, itMiddle,
+						[this](auto const & obj)
+				{
+					return m_fnEqual(m_fnGet(obj), m_fnGet(*m_itCurrent));
+				});
+
+					++m_itCurrent
+					)
+				{ }
+				return *this;
+			}
+			decltype(auto) operator * () const
+			{
+				using Trange = linq_range<Titerator>;
+				using Trange_enumerable = linq_enumerable<Trange>;
+				//static_assert(std::is_same<Treturn, decltype(linq_enumerable<linq_range<Titerator>>(m_itCurrent, m_itEnd).where(std::bind(m_fnEqual, std::placeholders::_1, m_fnGet(*m_itCurrent))))>::value, "Mismatch of return type 'Treturn'");
+				return Trange_enumerable(m_itCurrent, m_itEnd)
+					.where([this](auto const & obj)
+				{
+					return m_fnEqual(m_fnGet(obj), m_fnGet(*m_itCurrent));
+				});
+			}
+			decltype(auto) key() const
+			{
+				return m_fnGet(*m_itCurrent);
+			}
+		};
+		template <typename Titerator, typename Tparams>
 		class linq_uniq_iterator
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, linq_enumerable<linq_range<Titerator>>>
@@ -433,14 +504,6 @@ namespace jrmwng
 			decltype(auto) key() const
 			{
 				return m_fnGet(*m_itCurrent);
-			}
-			Titerator begin() const
-			{
-				return m_itCurrent;
-			}
-			Titerator end() const
-			{
-				return m_itNext;
 			}
 		};
 		template <typename Titerator, typename Tparams>
@@ -1130,6 +1193,22 @@ namespace jrmwng
 				using Twhere_container = linq_container<linq_enumerable<Tcontainer>, Tfunc, Twhere_iterator>;
 				using Twhere_enumerable = linq_enumerable<Twhere_container>;
 				return Twhere_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tfunc>(func));
+			}
+			template <typename Tget, typename Tequal>
+			decltype(auto) group_by(Tget && fnGet, Tequal && fnEqual) const
+			{
+				using Tparams = std::tuple<Tget, Tequal>;
+				using Titerator = decltype(Tcontainer::begin());
+				using Tgroup_by_iterator = linq_group_by_iterator<Titerator, Tparams>;
+				using Tgroup_by_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Tgroup_by_iterator>;
+				using Tgroup_by_enumerable = linq_enumerable<Tgroup_by_container>;
+				return Tgroup_by_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(std::forward<Tget>(fnGet), std::forward<Tequal>(fnEqual)));
+			}
+			template <typename Tget>
+			decltype(auto) group_by(Tget && fnGet) const
+			{
+				using Tequal = std::equal_to<decltype(fnGet(*Tcontainer::begin()))>;
+				return group_by(std::forward<Tget>(fnGet), Tequal());
 			}
 			template <typename Tget, typename Tequal>
 			decltype(auto) uniq(Tget && fnGet, Tequal && fnEqual) const
