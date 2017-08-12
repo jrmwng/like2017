@@ -27,6 +27,28 @@ namespace jrmwng
 		template <typename Tcontainer>
 		class linq_enumerable;
 
+		template <typename Tcontainer>
+		struct add_enumerable
+		{
+			typedef linq_enumerable<Tcontainer> type;
+		};
+		template <typename Tcontainer>
+		struct add_enumerable<linq_enumerable<Tcontainer>>
+		{
+			typedef linq_enumerable<Tcontainer> type;
+		};
+
+		template <typename Tcontainer>
+		struct remove_enumerable
+		{
+			typedef Tcontainer type;
+		};
+		template <typename Tcontainer>
+		struct remove_enumerable<linq_enumerable<Tcontainer>>
+		{
+			typedef Tcontainer type;
+		};
+
 		template <typename Tcontainer, typename Titerator>
 		class linq_container
 		{
@@ -1044,6 +1066,8 @@ namespace jrmwng
 		class linq_enumerable
 			: public Tcontainer
 		{
+			static_assert(std::is_same<Tcontainer, typename remove_enumerable<typename linq_enumerable>::type>::value, "Tcontainer must not be 'linq_enumerable<...>'");
+			static_assert(std::is_same<typename linq_enumerable, typename add_enumerable<Tcontainer>::type>::value, "Tcontainer must not be 'linq_enumerable<...>'");
 		public:
 			typedef Tcontainer
 				container_type;
@@ -1334,13 +1358,15 @@ namespace jrmwng
 			template <typename Tthat>
 			decltype(auto) concat(Tthat && that) const
 			{
+				typedef typename remove_enumerable<Tthat>::type
+					Tthat_container;
 				typedef decltype(Tcontainer::begin())
 					Titerator0;
 				typedef decltype(that.begin())
 					Titerator1;
 				typedef linq_concat_iterator<Titerator0, Titerator1>
 					Tconcat_iterator;
-				typedef linq_pair_container<Tcontainer, Tthat, Tconcat_iterator>
+				typedef linq_pair_container<Tcontainer, Tthat_container, Tconcat_iterator>
 					Tconcat_container;
 				typedef linq_enumerable<Tconcat_container>
 					Tconcat_enumerable;
@@ -1448,14 +1474,14 @@ namespace jrmwng
 			template <typename Tthat, typename Touter_key_selector, typename Tinner_key_selector, typename Tresult_selector>
 			decltype(auto) group_join(Tthat && that, Touter_key_selector && fnOuterKeySelector, Tinner_key_selector && fnInnerKeySelector, Tresult_selector && fnResultSelector)
 			{
-				auto linqInner = from(std::forward<Tthat>(that));
+				auto linqThat = from(std::forward<Tthat>(that));
 				typedef decltype(Tcontainer::begin())
 					Titerator;
-				typedef decltype(linqInner)
+				typedef decltype(linqThat)
 					Tinner;
 				typedef std::tuple<Tinner, Touter_key_selector, Tinner_key_selector, Tresult_selector>
 					Tparams;
-				typedef decltype(fnResultSelector(*Tcontainer::begin(), linqInner))
+				typedef decltype(fnResultSelector(*Tcontainer::begin(), linqThat))
 					Treturn;
 				typedef linq_group_join_iterator<Titerator, Tparams, Treturn>
 					Tgroup_join_iterator;
@@ -1463,7 +1489,7 @@ namespace jrmwng
 					Tgroup_join_container;
 				typedef linq_enumerable<Tgroup_join_container>
 					Tgroup_join_enumerable;
-				return Tgroup_join_enumerable(Tcontainer(*this), Tparams(std::move(linqInner), std::forward<Touter_key_selector>(fnOuterKeySelector), std::forward<Tinner_key_selector>(fnInnerKeySelector), std::forward<Tresult_selector>(fnResultSelector)));
+				return Tgroup_join_enumerable(Tcontainer(*this), Tparams(std::move(linqThat), std::forward<Touter_key_selector>(fnOuterKeySelector), std::forward<Tinner_key_selector>(fnInnerKeySelector), std::forward<Tresult_selector>(fnResultSelector)));
 			}
 			template <typename Tfunc>
 			decltype(auto) where(Tfunc && func) const
@@ -1554,6 +1580,8 @@ namespace jrmwng
 			template <typename Tthat, typename Tfunc>
 			decltype(auto) zip(Tthat && that, Tfunc && func)
 			{
+				typedef typename remove_enumerable<Tthat>::type
+					Tthat_container;
 				typedef decltype(Tcontainer::begin())
 					Titerator0;
 				typedef decltype(that.begin())
@@ -1562,7 +1590,7 @@ namespace jrmwng
 					Treturn;
 				typedef linq_zip_iterator < Titerator0, Titerator1, Tfunc, Treturn>
 					Tzip_iterator;
-				typedef linq_pair_container<Tcontainer, Tthat, Tzip_iterator>
+				typedef linq_pair_container<Tcontainer, Tthat_container, Tzip_iterator>
 					Tzip_container;
 				typedef linq_enumerable<Tzip_container>
 					Tzip_enumerable;
