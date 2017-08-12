@@ -342,33 +342,32 @@ namespace jrmwng
 			}
 		};
 		template <typename Titerator, typename Tparams>
-		class linq_group_by_iterator
+		class linq_uniq_iterator
 			: public linq_iterator<Titerator>
 			, public std::iterator<std::forward_iterator_tag, linq_enumerable<linq_range<Titerator>>>
 		{
 			Titerator m_itNext;
 			Titerator const m_itBegin;
 			Titerator const m_itEnd;
-			Tparams const m_params;
+			typename std::tuple_element<0, Tparams>::type const m_fnGet;
+			typename std::tuple_element<1, Tparams>::type const m_fnEqual;
 		public:
 			template <typename Tcontainer>
-			linq_group_by_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
+			linq_uniq_iterator(Titerator && itCurrent, Tcontainer const & container, Tparams && params)
 				: linq_iterator<Titerator>(std::forward<Titerator>(itCurrent))
 				, m_itNext(itCurrent)
 				, m_itBegin(container.begin())
 				, m_itEnd(container.end())
-				, m_params(std::forward<Tparams>(params))
+				, m_fnGet(std::get<0>(params))
+				, m_fnEqual(std::get<1>(params))
 			{
 				if (itCurrent != m_itEnd)
 				{
-					auto const & fnGet = std::get<0>(m_params);
-					auto const & fnEqual = std::get<1>(m_params);
-
-					auto const valueCurrent = fnGet(*itCurrent);
+					auto const valueCurrent = m_fnGet(*itCurrent);
 
 					Titerator itNext = itCurrent;
 					{
-						while (++itNext != m_itEnd && fnEqual(valueCurrent, fnGet(*itNext)))
+						while (++itNext != m_itEnd && m_fnEqual(valueCurrent, m_fnGet(*itNext)))
 						{
 							// NOP
 						}
@@ -376,12 +375,13 @@ namespace jrmwng
 					m_itNext = itNext;
 				}
 			}
-			linq_group_by_iterator & operator = (linq_group_by_iterator const & that)
+			linq_uniq_iterator & operator = (linq_uniq_iterator const & that)
 			{
 #ifdef _DEBUG
 				if (m_itBegin != that.m_itBegin ||
 					m_itEnd != that.m_itEnd ||
-					memcmp(&m_params, &that.m_params, sizeof(Tparams)))
+					memcmp(&m_fnGet, &that.m_fnGet, sizeof(m_fnGet)) ||
+					memcmp(&m_fnEqual, &that.m_fnEqual, sizeof(m_fnEqual)))
 				{
 					__debugbreak();
 				}
@@ -390,19 +390,17 @@ namespace jrmwng
 				m_itNext = that.m_itNext;
 				return *this;
 			}
-			linq_group_by_iterator & operator ++ ()
+			linq_uniq_iterator & operator ++ ()
 			{
 				m_itCurrent = m_itNext;
 
 				if (m_itNext != m_itEnd)
 				{
-					auto const & fnGet = std::get<0>(m_params);
-					auto const & fnEqual = std::get<1>(m_params);
-					auto const valueCurrent = fnGet(*m_itNext);
+					auto const valueCurrent = m_fnGet(*m_itNext);
 
 					Titerator itNext = m_itNext;
 					{
-						while (++itNext != m_itEnd && fnEqual(valueCurrent, fnGet(*itNext)))
+						while (++itNext != m_itEnd && m_fnEqual(valueCurrent, m_fnGet(*itNext)))
 						{
 							// NOP
 						}
@@ -420,7 +418,7 @@ namespace jrmwng
 			}
 			decltype(auto) key() const
 			{
-				return std::get<0>(m_params)(*m_itCurrent);
+				return m_fnGet(*m_itCurrent);
 			}
 			Titerator begin() const
 			{
@@ -1112,20 +1110,20 @@ namespace jrmwng
 				return Twhere_enumerable(linq_enumerable<Tcontainer>(*this), std::forward<Tfunc>(func));
 			}
 			template <typename Tget, typename Tequal>
-			decltype(auto) group_by(Tget && fnGet, Tequal && fnEqual) const
+			decltype(auto) uniq(Tget && fnGet, Tequal && fnEqual) const
 			{
 				using Tparams = std::tuple<Tget, Tequal>;
 				using Titerator = decltype(Tcontainer::begin());
-				using Tgroup_by_iterator = linq_group_by_iterator<Titerator, Tparams>;
-				using Tgroup_by_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Tgroup_by_iterator>;
-				using Tgroup_by_enumerable = linq_enumerable<Tgroup_by_container>;
-				return Tgroup_by_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(std::forward<Tget>(fnGet), std::forward<Tequal>(fnEqual)));
+				using Tuniq_iterator = linq_uniq_iterator<Titerator, Tparams>;
+				using Tuniq_container = linq_container<linq_enumerable<Tcontainer>, Tparams, Tuniq_iterator>;
+				using Tuniq_enumerable = linq_enumerable<Tuniq_container>;
+				return Tuniq_enumerable(linq_enumerable<Tcontainer>(*this), Tparams(std::forward<Tget>(fnGet), std::forward<Tequal>(fnEqual)));
 			}
 			template <typename Tget>
-			decltype(auto) group_by(Tget && fnGet) const
+			decltype(auto) uniq(Tget && fnGet) const
 			{
 				using Tequal = std::equal_to<decltype(fnGet(*Tcontainer::begin()))>;
-				return group_by(std::forward<Tget>(fnGet), Tequal());
+				return uniq(std::forward<Tget>(fnGet), Tequal());
 			}
 			template <typename Tget, typename Tcompare>
 			decltype(auto) order_by(Tget && fnGet, Tcompare && fnCompare) const

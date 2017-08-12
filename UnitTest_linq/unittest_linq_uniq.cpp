@@ -5,11 +5,11 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest_linq
 {
-	TEST_CLASS(UnitTest_linq_group_by)
+	TEST_CLASS(UnitTest_linq_uniq)
 	{
 	public:
 
-		TEST_METHOD(TestMethod_linq_group_by)
+		TEST_METHOD(TestMethod_linq_uniq)
 		{
 			using Tsimd_string = jrmwng::sse_string<char>;
 
@@ -17,7 +17,7 @@ namespace UnitTest_linq
 			std::vector<ptrdiff_t> const vectorGroup1({ 1, 1, 2 });
 
 			Assert::IsTrue(jrmwng::linq::from(vectorName0)
-				.group_by([](auto str)
+				.uniq([](auto str)
 			{
 				return str.length();
 			})
@@ -28,7 +28,7 @@ namespace UnitTest_linq
 				.sequential_equal(vectorGroup1));
 
 			Assert::IsTrue(jrmwng::linq::from(vectorName0)
-				.group_by(std::identity<Tsimd_string>(), [](auto left, auto right)
+				.uniq(std::identity<Tsimd_string>(), [](auto left, auto right)
 			{
 				return left.length() == right.length();
 			})
