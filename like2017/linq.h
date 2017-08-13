@@ -478,7 +478,7 @@ namespace jrmwng
 
 					m_itCurrent != m_itEnd &&
 					std::any_of(m_itBegin, itMiddle,
-						[keyCurrent = *m_itCurrent, this](auto const & obj)
+						[keyCurrent = *m_itCurrent, this](auto obj)
 				{
 					return m_fnEqual(obj, keyCurrent);
 				});
@@ -552,7 +552,7 @@ namespace jrmwng
 
 					m_itCurrent != m_itEnd &&
 					std::any_of(m_itBegin, itMiddle,
-						[keyCurrent = m_fnGet(*m_itCurrent), this](auto const & obj)
+						[keyCurrent = m_fnGet(*m_itCurrent), this](auto obj)
 				{
 					return m_fnEqual(m_fnGet(obj), keyCurrent);
 				});
@@ -570,7 +570,7 @@ namespace jrmwng
 					Trange_enumerable;
 				//static_assert(std::is_same<Treturn, decltype(linq_enumerable<linq_range<Titerator>>(m_itCurrent, m_itEnd).where(std::bind(m_fnEqual, std::placeholders::_1, m_fnGet(*m_itCurrent))))>::value, "Mismatch of return type 'Treturn'");
 				return Trange_enumerable(m_itCurrent, m_itEnd)
-					.where([this](auto const & obj)
+					.where([this](auto obj)
 				{
 					return m_fnEqual(m_fnGet(obj), m_fnGet(*m_itCurrent));
 				});
@@ -1101,7 +1101,7 @@ namespace jrmwng
 			template <typename Treturn, typename Tget>
 			Treturn average(Tget && fnGet) const
 			{
-				auto const tuple = aggregate(std::make_tuple(Treturn(0), 0), [fnGet](auto const & accumulator, auto const & obj)
+				auto const tuple = aggregate(std::make_tuple(Treturn(0), 0), [fnGet](auto accumulator, auto obj)
 				{
 					return std::make_tuple(static_cast<Treturn>(std::get<0>(accumulator) + fnGet(obj)), std::get<1>(accumulator) + 1);
 				});
@@ -1117,7 +1117,7 @@ namespace jrmwng
 			template <typename Tvalue, typename Tfunc>
 			bool contains(Tvalue value, Tfunc && fnEqual) const
 			{
-				return any([value, fnEqual](auto const & obj)
+				return any([value, fnEqual](auto obj)
 				{
 					return fnEqual(obj, value);
 				});
@@ -1134,7 +1134,7 @@ namespace jrmwng
 			}
 			decltype(auto) count() const
 			{
-				return count([](auto const &)
+				return count([](auto)
 				{
 					return true;
 				});
@@ -1183,7 +1183,7 @@ namespace jrmwng
 			}
 			decltype(auto) first() const
 			{
-				return first([](auto const &)
+				return first([](auto)
 				{
 					return true;
 				});
@@ -1210,7 +1210,7 @@ namespace jrmwng
 			}
 			decltype(auto) first_or_default() const
 			{
-				return first_or_default([](auto const &)
+				return first_or_default([](auto)
 				{
 					return true;
 				});
@@ -1239,7 +1239,7 @@ namespace jrmwng
 			}
 			decltype(auto) last() const
 			{
-				return last([](auto const &)
+				return last([](auto)
 				{
 					return true;
 				});
@@ -1271,7 +1271,7 @@ namespace jrmwng
 			}
 			decltype(auto) last_or_default() const
 			{
-				return last_or_default([](auto const &)
+				return last_or_default([](auto)
 				{
 					return true;
 				});
@@ -1392,7 +1392,7 @@ namespace jrmwng
 			template <typename Tthat, typename Tequal>
 			decltype(auto) except(Tthat const & that, Tequal && fnEqual) const
 			{
-				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
+				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto valueCurrent)
 				{
 					return !std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
 				});
@@ -1407,7 +1407,7 @@ namespace jrmwng
 			template <typename Tthat, typename Tequal>
 			decltype(auto) intersection(Tthat const & that, Tequal && fnEqual) const
 			{
-				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto const & valueCurrent)
+				return where([itBegin = that.begin(), itEnd = that.end(), fnEqual](auto valueCurrent)
 				{
 					return std::any_of(itBegin, itEnd, std::bind2nd(fnEqual, valueCurrent));
 				});
@@ -1490,12 +1490,12 @@ namespace jrmwng
 			template <typename Tthat, typename Touter_key_selector, typename Tinner_key_selector, typename Tresult_selector>
 			decltype(auto) group_join(Tthat && that, Touter_key_selector && fnOuterKeySelector, Tinner_key_selector && fnInnerKeySelector, Tresult_selector && fnResultSelector)
 			{
-				return select([linqInner = from(std::forward<Tthat>(that)), fnOuterKeySelector, fnInnerKeySelector, fnResultSelector](auto const & objOuter)
+				return select([linqInner = from(std::forward<Tthat>(that)), fnOuterKeySelector, fnInnerKeySelector, fnResultSelector](auto objOuter)
 				{
 					return fnResultSelector(
 						objOuter,
 						linqInner
-							.where([keyOuter = fnOuterKeySelector(objOuter), fnInnerKeySelector](auto const & objInner)
+							.where([keyOuter = fnOuterKeySelector(objOuter), fnInnerKeySelector](auto objInner)
 						{
 							return keyOuter == fnInnerKeySelector(objInner);
 						})
@@ -1506,10 +1506,10 @@ namespace jrmwng
 			decltype(auto) join(Tthat && that, Touter_key_selector && fnOuterKeySelector, Tinner_key_selector && fnInnerKeySelector, Tresult_selector && fnResultSelector)
 			{
 				return select_many(
-					[linqInner = from(std::forward<Tthat>(that)), fnOuterKeySelector, fnInnerKeySelector](auto const & objOuter)
+					[linqInner = from(std::forward<Tthat>(that)), fnOuterKeySelector, fnInnerKeySelector](auto objOuter)
 				{
 					return linqInner
-						.where([keyOuter = fnOuterKeySelector(objOuter), fnInnerKeySelector](auto const & objInner)
+						.where([keyOuter = fnOuterKeySelector(objOuter), fnInnerKeySelector](auto objInner)
 					{
 						return keyOuter == fnInnerKeySelector(objInner);
 					});
