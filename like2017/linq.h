@@ -728,8 +728,8 @@ namespace jrmwng
 			{
 				if (m_itCurrent != m_itEnd)
 				{
-					Titerator itMin = m_itCurrent;
-					Titerator itNext = m_itCurrent;
+					Titerator itMin = m_itBegin;
+					Titerator itNext = m_itBegin;
 					{
 						auto valueMin = m_fnGet(*itMin);
 						auto valueNext = valueMin; // *itNext;
@@ -750,8 +750,10 @@ namespace jrmwng
 							}
 						}
 					}
+					auto offset = std::distance(m_itBegin, m_itCurrent);
 					m_itCurrent = itMin;
-					m_itNext    = itNext;
+					m_itNext = itNext;
+					std::advance(*this, offset);
 				}
 			}
 			linq_order_by_iterator & operator = (linq_order_by_iterator const & that)
@@ -810,6 +812,61 @@ namespace jrmwng
 					}
 					m_itCurrent = std::exchange(m_itNext, itNextNext);
 				}
+				return *this;
+			}
+		};
+		template <typename Titerator, typename Tvector>
+		class linq_order_by_iterator<Titerator, std::function<Tvector(Titerator const &, Titerator const &)>>
+			: public std::iterator<std::forward_iterator_tag, typename Titerator::value_type>
+		{
+			typedef std::function<Tvector(Titerator const &, Titerator const &)>
+				Tparams;
+
+			size_t m_uIndex;
+			Tvector const m_vectorIterator;
+
+			void debug_check(typename linq_order_by_iterator const & that) const
+			{
+#ifdef _DEBUG
+				if (typeid(m_vectorIterator) != typeid(that.m_vectorIterator))
+				{
+					__debugbreak();
+				}
+#endif
+			}
+		public:
+			typedef Tparams
+				params_type;
+
+			template <typename Tcontainer>
+			linq_order_by_iterator(Titerator && itCurrent, Tcontainer const & container, std::function<Tvector(Titerator const &, Titerator const &)> const & fnSorted)
+				: m_uIndex(std::distance(container.begin(), itCurrent))
+				, m_vectorIterator((itCurrent != container.end()) ? std::move(fnSorted(container.begin(), container.end())) : Tvector())
+			{}
+			bool operator == (typename linq_order_by_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_uIndex == that.m_uIndex;
+			}
+			bool operator != (typename linq_order_by_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				return m_uIndex != that.m_uIndex;
+			}
+			linq_order_by_iterator & operator = (linq_order_by_iterator const & that) const
+			{
+				DEBUG_CHECK(that);
+				m_uIndex = that.m_uIndex;
+				return *this;
+			}
+
+			decltype(auto) operator * () const
+			{
+				return *m_vectorIterator[m_uIndex];
+			}
+			linq_order_by_iterator & operator ++ ()
+			{
+				++m_uIndex;
 				return *this;
 			}
 		};
@@ -1568,6 +1625,40 @@ namespace jrmwng
 				typedef decltype(fnGet(*Tcontainer::begin()))
 					Tvalue;
 				return uniq(std::forward<Tget>(fnGet), std::equal_to<Tvalue>());
+			}
+			template <template <typename... T> class Cvector, typename Tget, typename Tcompare>
+			decltype(auto) order_by(Tget && fnGet, Tcompare && fnCompare) const
+			{
+				typedef decltype(Tcontainer::begin())
+					Titerator;
+				typedef std::function<Cvector<Titerator>(Titerator const &, Titerator const &)>
+					Tsorted;
+				
+				Tsorted fnSorted = [fnGet, fnCompare](Titerator const & itBegin, Titerator const & itEnd)->Cvector<Titerator>
+				{
+					Cvector<Titerator> vectorIterator;
+					{
+						vectorIterator.reserve(std::distance(itBegin, itEnd));
+						for (auto it = itBegin; it != itEnd; ++it)
+						{
+							vectorIterator.push_back(it);
+						}
+						std::sort(vectorIterator.begin(), vectorIterator.end(),
+							[fnGet, fnCompare](Titerator const & itLeft, Titerator const & itRight)
+						{
+							return fnCompare(fnGet(*itLeft), fnGet(*itRight));
+						});
+					}
+					return vectorIterator;
+				};
+
+				typedef linq_order_by_iterator<Titerator, Tsorted>
+					Torder_by_iterator;
+				typedef linq_container<Tcontainer, Torder_by_iterator>
+					Torder_by_container;
+				typedef linq_enumerable<Torder_by_container>
+					Torder_by_enumerable;
+				return Torder_by_enumerable(Tcontainer(*this), std::move(fnSorted));
 			}
 			template <typename Tget, typename Tcompare>
 			decltype(auto) order_by(Tget && fnGet, Tcompare && fnCompare) const
