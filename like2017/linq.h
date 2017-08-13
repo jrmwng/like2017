@@ -728,25 +728,22 @@ namespace jrmwng
 			{
 				if (m_itCurrent != m_itEnd)
 				{
-					auto const & fnGet = m_fnGet;
-					auto const & fnLess = m_fnLess;
-
 					Titerator itMin = m_itCurrent;
 					Titerator itNext = m_itCurrent;
 					{
-						auto valueMin = fnGet(*itMin);
+						auto valueMin = m_fnGet(*itMin);
 						auto valueNext = valueMin; // *itNext;
 
 						for (Titerator it = itMin; it != m_itEnd; ++it)
 						{
-							auto const value = fnGet(*it);
+							auto const value = m_fnGet(*it);
 
-							if (fnLess(value, valueMin))
+							if (m_fnLess(value, valueMin))
 							{
 								valueNext = std::exchange(valueMin, value);
 								itNext = std::exchange(itMin, it);
 							}
-							else if (fnLess(valueMin, value) == fnLess(value, valueNext))
+							else if (m_fnLess(valueMin, value) == m_fnLess(value, valueNext))
 							{
 								valueNext = value;
 								itNext = it;
@@ -776,27 +773,25 @@ namespace jrmwng
 			}
 			linq_order_by_iterator & operator ++ ()
 			{
-				auto const & fnGet = m_fnGet;
-				auto const & fnLess = m_fnLess;
-				auto const valueKey = fnGet(*m_itCurrent);
-				auto valueNext = fnGet(*m_itNext);
+				auto const valueKey = m_fnGet(*m_itCurrent);
+				auto valueNext = m_fnGet(*m_itNext);
 
 				while (++m_itCurrent != m_itEnd)
 				{
-					auto const valueCurrent = fnGet(*m_itCurrent);
+					auto const valueCurrent = m_fnGet(*m_itCurrent);
 
-					if (fnLess(valueKey, valueCurrent) == fnLess(valueCurrent, valueKey))
+					if (m_fnLess(valueKey, valueCurrent) == m_fnLess(valueCurrent, valueKey))
 					{
 						return *this;
 					}
-					if ((fnLess(valueKey, valueCurrent) == fnLess(valueKey, valueNext)) == fnLess(valueCurrent, valueNext))
+					if ((m_fnLess(valueKey, valueCurrent) == m_fnLess(valueKey, valueNext)) == m_fnLess(valueCurrent, valueNext))
 					{
 						valueNext = valueCurrent;
 						m_itNext = m_itCurrent;
 					}
 				}
 
-				if (fnLess(valueKey, valueNext))
+				if (m_fnLess(valueKey, valueNext))
 				{
 					Titerator itNextNext = m_itNext;
 					{
@@ -804,9 +799,9 @@ namespace jrmwng
 
 						for (Titerator itCurrent = m_itBegin; itCurrent != m_itNext; ++itCurrent)
 						{
-							auto const valueCurrent = fnGet(*itCurrent);
+							auto const valueCurrent = m_fnGet(*itCurrent);
 
-							if ((fnLess(valueNext, valueCurrent) == fnLess(valueNext, valueNextNext)) == fnLess(valueCurrent, valueNextNext))
+							if ((m_fnLess(valueNext, valueCurrent) == m_fnLess(valueNext, valueNextNext)) == m_fnLess(valueCurrent, valueNextNext))
 							{
 								itNextNext = itCurrent;
 								valueNextNext = valueCurrent;
