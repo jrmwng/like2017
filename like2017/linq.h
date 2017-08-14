@@ -1633,7 +1633,13 @@ namespace jrmwng
 					Titerator;
 				typedef std::function<Cvector<Titerator>(Titerator const &, Titerator const &)>
 					Tsorted;
-				
+				typedef linq_order_by_iterator<Titerator, Tsorted>
+					Torder_by_iterator;
+				typedef linq_container<Tcontainer, Torder_by_iterator>
+					Torder_by_container;
+				typedef linq_enumerable<Torder_by_container>
+					Torder_by_enumerable;
+
 				Tsorted fnSorted = [fnGet, fnCompare](Titerator const & itBegin, Titerator const & itEnd)->Cvector<Titerator>
 				{
 					Cvector<Titerator> vectorIterator;
@@ -1652,13 +1658,21 @@ namespace jrmwng
 					return vectorIterator;
 				};
 
-				typedef linq_order_by_iterator<Titerator, Tsorted>
-					Torder_by_iterator;
-				typedef linq_container<Tcontainer, Torder_by_iterator>
-					Torder_by_container;
-				typedef linq_enumerable<Torder_by_container>
-					Torder_by_enumerable;
 				return Torder_by_enumerable(Tcontainer(*this), std::move(fnSorted));
+			}
+			template <template <typename T> class Ccompare, template <typename... T> class Cvector, typename Tget>
+			decltype(auto) order_by(Tget && fnGet) const
+			{
+				typedef typename std::decay<decltype(fnGet(*Tcontainer::begin()))>::type
+					Tvalue;
+				return order_by<Cvector>(std::forward<Tget>(fnGet), Ccompare<Tvalue>());
+			}
+			template <template <typename T> class Ccompare, template <typename... T> class Cvector>
+			decltype(auto) order_by() const
+			{
+				typedef typename std::decay<decltype(*Tcontainer::begin())>::type
+					Tvalue;
+				return order_by<Cvector>(std::identity<Tvalue>(), Ccompare<Tvalue>());
 			}
 			template <typename Tget, typename Tcompare>
 			decltype(auto) order_by(Tget && fnGet, Tcompare && fnCompare) const

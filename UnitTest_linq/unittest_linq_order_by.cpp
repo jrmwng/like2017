@@ -32,6 +32,10 @@ namespace UnitTest_linq
 				.sequential_equal(vectorName1));
 			Assert::IsTrue(jrmwng::linq::from(vectorName0).order_by<std::vector>(std::mem_fun_ref(&Tsimd_string::length), std::less<int>())
 				.sequential_equal(vectorName1));
+			Assert::IsTrue(jrmwng::linq::from(vectorName0).order_by<std::less, std::vector>(std::mem_fun_ref(&Tsimd_string::length))
+				.sequential_equal(vectorName1));
+			Assert::IsTrue(jrmwng::linq::from(vectorName0).order_by<std::less, std::vector>()
+				.sequential_equal(vectorName1));
 		}
 
 	};
