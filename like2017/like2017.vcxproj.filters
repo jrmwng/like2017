@@ -30,6 +30,9 @@
     <ClInclude Include="simd_string.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cnn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
