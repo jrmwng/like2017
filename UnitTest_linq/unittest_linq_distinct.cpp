@@ -5,11 +5,11 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest_distinct
 {
-	TEST_CLASS(UnitTest_distinct)
+	TEST_CLASS(UnitTest_linq_distinct)
 	{
 	public:
 
-		TEST_METHOD(TestMethod_distinct)
+		TEST_METHOD(TestMethod_linq_distinct)
 		{
 			using Tsimd_string = jrmwng::sse_string<char>;
 

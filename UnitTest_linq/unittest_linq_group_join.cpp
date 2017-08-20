@@ -5,11 +5,11 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest_group_join
 {
-	TEST_CLASS(UnitTest_group_join)
+	TEST_CLASS(UnitTest_linq_group_join)
 	{
 	public:
 
-		TEST_METHOD(TestMethod_group_join)
+		TEST_METHOD(TestMethod_linq_group_join)
 		{
 			using Tsimd_string = jrmwng::sse_string<char>;
 
