@@ -12,7 +12,7 @@ namespace jrmwng
 		class Ctensor;
 		template <typename T, typename Tleft, typename Tright>
 		class Cconvolution;
-		template <template <typename T> class Cmax, typename Ttensor, size_t... uSTRIDE>
+		template <typename Ttensor, template <typename T> class Cmax, size_t... uSTRIDE>
 		class Cpooling;
 		template <typename Ttensor>
 		class Celementwise;
@@ -22,7 +22,7 @@ namespace jrmwng
 		Cconvolution<T, Tleft, Tright>
 			convolute(Tleft const & left, Tright const & right);
 		template <template <typename T> class Cmax, size_t... uSTRIDES, typename Ttensor>
-		Cpooling<Cmax, Ttensor, uSTRIDES...>
+		Cpooling<Ttensor, Cmax, uSTRIDES...>
 			pooling(Ttensor const & tensor);
 		template <typename Ttensor>
 		Celementwise<Ttensor>
@@ -137,8 +137,8 @@ namespace jrmwng
 			}
 		};
 
-		template <template <typename T> class Cmax, typename T>
-		class Cpooling<Cmax, Ctensor<T>>
+		template <typename T, template <typename T> class Cmax>
+		class Cpooling<Ctensor<T>, Cmax>
 		{
 			Ctensor<T> const & m_tensor;
 		public:
@@ -151,12 +151,12 @@ namespace jrmwng
 				return m_tensor();
 			}
 		};
-		template <template <typename T> class Cmax, typename T, size_t uSIZE0, size_t... uSIZES, size_t uSTRIDE0, size_t... uSTRIDES>
-		class Cpooling<Cmax, Ctensor<T, uSIZE0, uSIZES...>, uSTRIDE0, uSTRIDES...>
+		template <typename T, size_t uSIZE0, size_t... uSIZES, template <typename T> class Cmax, size_t uSTRIDE0, size_t... uSTRIDES>
+		class Cpooling<Ctensor<T, uSIZE0, uSIZES...>, Cmax, uSTRIDE0, uSTRIDES...>
 		{
 			typedef Ctensor<T, uSIZE0, uSIZES...>
 				Ttensor;
-			typedef Cpooling<Cmax, Ctensor<T, uSIZES...>, uSTRIDES...>
+			typedef Cpooling<Ctensor<T, uSIZES...>, Cmax, uSTRIDES...>
 				Tsub;
 
 			Ttensor const & m_tensor;
@@ -181,10 +181,10 @@ namespace jrmwng
 			}
 		};
 		template <template <typename T> class Cmax, size_t... uSTRIDES, typename Ttensor>
-		Cpooling<Cmax, Ttensor, uSTRIDES...>
+		Cpooling<Ttensor, Cmax, uSTRIDES...>
 			pooling(Ttensor const & tensor)
 		{
-			return Cpooling<Cmax, Ttensor, uSTRIDES...>(tensor);
+			return Cpooling<Ttensor, Cmax, uSTRIDES...>(tensor);
 		}
 
 
