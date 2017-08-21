@@ -8,47 +8,12 @@ namespace jrmwng
 {
 	namespace cnn
 	{
-		template <typename T, size_t... uSIZES>
-		class Carray;
 		template <typename T, size_t... uSIZE>
 		class Ctensor;
 		template <typename T, typename Tleft, typename Tright>
 		class Cconvolution;
 		template <template <typename T> class Cmax, typename Ttensor, size_t... uSTRIDE>
 		class Cpooling;
-
-		template <typename T, size_t uSIZE0, size_t uSIZE1, size_t... uSIZES>
-		class Carray<T, uSIZE0, uSIZE1, uSIZES...>
-			: public Carray<std::array<T, uSIZE0>, uSIZE1, uSIZES...>
-		{
-		public:
-			template <typename... Tindex>
-			T const & operator () (size_t uIndexX, Tindex... index) const
-			{
-				Carray<std::array<T, uSIZE0>, uSIZE1, uSIZES...> const & arrayThis = *this;
-				return arrayThis(index...)[uIndexX];
-			}
-			template <typename... Tindex>
-			T & operator () (size_t uIndexX, Tindex... index)
-			{
-				Carray<std::array<T, uSIZE0>, uSIZE1, uSIZES...> & arrayThis = *this;
-				return arrayThis(index...)[uIndexX];
-			}
-		};
-		template <typename T, size_t uSIZE0>
-		class Carray<T, uSIZE0>
-			: public std::array<T, uSIZE0>
-		{
-		public:
-			T const & operator () (size_t uIndexY) const
-			{
-				return (*this)[uIndexY];
-			}
-			T & operator () (size_t uIndexY)
-			{
-				return (*this)[uIndexY];
-			}
-		};
 
 
 		template <typename T, size_t uSIZE0, size_t... uSIZES>
