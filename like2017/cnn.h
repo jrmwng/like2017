@@ -14,87 +14,26 @@ namespace jrmwng
 		class Cconvolution;
 		template <template <typename T> class Cmax, typename Ttensor, size_t... uSTRIDE>
 		class Cpooling;
+		template <typename Ttensor>
+		class Celementwise;
+
+
+		template <typename T, typename Tleft, typename Tright>
+		Cconvolution<T, Tleft, Tright>
+			convolute(Tleft const & left, Tright const & right);
+		template <template <typename T> class Cmax, size_t... uSTRIDES, typename Ttensor>
+		Cpooling<Cmax, Ttensor, uSTRIDES...>
+			pooling(Ttensor const & tensor);
+		template <typename Ttensor>
+		Celementwise<Ttensor>
+			elementwise(Ttensor & tensor);
 
 
 		template <typename T, size_t uSIZE0, size_t... uSIZES>
 		class Ctensor<T, uSIZE0, uSIZES...>
 			: public std::array<Ctensor<T, uSIZES...>, uSIZE0>
 		{
-			friend class Ctensor;
-
-			template <typename Tfunc, typename... Tindex>
-			void for_each(Tfunc const & func, Tindex... index)
-			{
-				for (size_t uIndex = 0; uIndex < uSIZE0; uIndex++)
-				{
-					(*this)[uIndex].for_each(func, index..., uIndex);
-				}
-			}
-
-			template <typename Tvalue>
-			struct Cassignment
-			{
-				typename Ctensor & m_tensor;
-				Tvalue const & m_value;
-
-				Cassignment(typename Ctensor & tensor, Tvalue const & value)
-					: m_tensor(tensor)
-					, m_value(value)
-				{}
-
-				template <typename... Tindex>
-				void operator () (Tindex ... index) const
-				{
-					m_tensor(index...) = m_value;
-				}
-			};
-			template <typename Tvalue>
-			decltype(auto) assignment(Tvalue const & value)
-			{
-				return Cassignment<Tvalue>(*this, value);
-			}
-			template <typename Tthat>
-			struct Celementwise_assignment
-			{
-				typename Ctensor & m_tensor;
-				Tthat const & m_that;
-
-				Celementwise_assignment(typename Ctensor & tensor, Tthat const & that)
-					: m_tensor(tensor)
-					, m_that(that)
-				{}
-
-				template <typename... Tindex>
-				void operator () (Tindex ... index) const
-				{
-					m_tensor(index...) = m_that(index...);
-				}
-			};
-			template <typename Tthat>
-			decltype(auto) elementwise_assignment(Tthat const & that)
-			{
-				return Celementwise_assignment<Tthat>(*this, that);
-			}
-
 		public:
-			typename Ctensor & operator = (T const & t)
-			{
-				for_each(assignment(t));
-				return *this;
-			}
-			template <typename Tleft, size_t... uLEFT, typename Tright, size_t... uRIGHT>
-			typename Ctensor & operator = (Cconvolution<T, Ctensor<Tleft, uLEFT...>, Ctensor<Tright, uRIGHT...>> const & that)
-			{
-				for_each(elementwise_assignment(that));
-				return *this;
-			}
-			template <template <typename T> class Cmax, typename Ttensor, size_t... uSTRIDES>
-			typename Ctensor & operator = (Cpooling<Cmax, Ttensor, uSTRIDES...> const & that)
-			{
-				for_each(elementwise_assignment(that));
-				return *this;
-			}
-
 			template <typename... Tindex>
 			T const & operator () (size_t uSubIndex, Tindex ... index) const
 			{
@@ -109,17 +48,8 @@ namespace jrmwng
 		template <typename T>
 		class Ctensor<T>
 		{
-			friend class Ctensor;
-
 			T m_t;
-
-			template <typename Tfunc, typename... Tindex>
-			void for_each(Tfunc const & func, Tindex... index)
-			{
-				func(index...);
-			}
 		public:
-
 			typename Ctensor & operator = (T const & t)
 			{
 				m_t = t;
@@ -138,6 +68,7 @@ namespace jrmwng
 				return m_t;
 			}
 		};
+
 
 		template <typename T, typename Tleft, typename Tright>
 		class Cconvolution<T, Ctensor<Tleft>, Ctensor<Tright>>
@@ -166,13 +97,12 @@ namespace jrmwng
 				Tleft_tensor;
 			typedef Ctensor<Tright, uRIGHT0, uRIGHT...>
 				Tright_tensor;
+			typedef Cconvolution<T, Ctensor<Tleft, uLEFT...>, Ctensor<Tright, uRIGHT...>>
+				Tsub;
 
 			Tleft_tensor const & m_left;
 			Tright_tensor const & m_right;
 		public:
-			typedef Cconvolution<T, Ctensor<Tleft, uLEFT...>, Ctensor<Tright, uRIGHT...>>
-				sub_type;
-
 			Cconvolution(Tleft_tensor const & left, Tright_tensor const & right)
 				: m_left(left)
 				, m_right(right)
@@ -181,21 +111,21 @@ namespace jrmwng
 			template <typename... Tindex>
 			T operator () (size_t uLeftIndex, Tindex... index) const
 			{
-				T t = sub_type(m_left[uLeftIndex], m_right[0])(index...);
+				T t = Tsub(m_left[uLeftIndex], m_right[0])(index...);
 				{
 					for (size_t uRightIndex = 1; uRightIndex < uRIGHT0; uRightIndex++)
 					{
-						t += sub_type(m_left[uLeftIndex], m_right[uRightIndex])(index...);
+						t += Tsub(m_left[uLeftIndex], m_right[uRightIndex])(index...);
 					}
 				}
 				return t;
 			}
 		};
-
-		template <typename T, typename Tleft, size_t... uLEFT, typename Tright, size_t... uRIGHT>
-		decltype(auto) convolute(Ctensor<Tleft, uLEFT...> const & left, Ctensor<Tright, uRIGHT...> const & right)
+		template <typename T, typename Tleft, typename Tright>
+		Cconvolution<T, Tleft, Tright>
+			convolute(Tleft const & left, Tright const & right)
 		{
-			return Cconvolution<T, Ctensor<Tleft, uLEFT...>, Ctensor<Tright, uRIGHT...>>(left, right);
+			return Cconvolution<T, Tleft, Tright>(left, right);
 		}
 
 		template <typename T>
@@ -206,16 +136,17 @@ namespace jrmwng
 				return (left < right) ? right : left;
 			}
 		};
-		template <template <typename T> class Cmax, typename Ttensor>
-		class Cpooling<Cmax, Ttensor>
+
+		template <template <typename T> class Cmax, typename T>
+		class Cpooling<Cmax, Ctensor<T>>
 		{
-			Ttensor const & m_tensor;
+			Ctensor<T> const & m_tensor;
 		public:
-			Cpooling(Ttensor const & tensor)
+			Cpooling(Ctensor<T> const & tensor)
 				: m_tensor(tensor)
 			{}
 
-			decltype(auto) operator () () const
+			T operator () () const
 			{
 				return m_tensor();
 			}
@@ -225,33 +156,117 @@ namespace jrmwng
 		{
 			typedef Ctensor<T, uSIZE0, uSIZES...>
 				Ttensor;
+			typedef Cpooling<Cmax, Ctensor<T, uSIZES...>, uSTRIDES...>
+				Tsub;
 
 			Ttensor const & m_tensor;
 		public:
-			typedef Cpooling<Cmax, Ctensor<T, uSIZES...>, uSTRIDES...>
-				sub_type;
-
 			Cpooling(Ttensor const & tensor)
 				: m_tensor(tensor)
 			{}
 
 			template <typename... Tindex>
-			decltype(auto) operator () (size_t uIndex, Tindex... index) const
+			T operator () (size_t uIndex, Tindex... index) const
 			{
-				auto t = sub_type(m_tensor[uIndex * uSTRIDE0])(index...);
+				T t = Tsub(m_tensor[uIndex * uSTRIDE0])(index...);
 				{
+					Cmax<T> const fnMax;
+
 					for (size_t uOffset = 1; uOffset < uSTRIDE0; uOffset++)
 					{
-						t = Cmax<decltype(t)>()(t, sub_type(m_tensor[uIndex * uSTRIDE0 + uOffset])(index...));
+						t = fnMax(t, Tsub(m_tensor[uIndex * uSTRIDE0 + uOffset])(index...));
 					}
 				}
 				return t;
 			}
 		};
 		template <template <typename T> class Cmax, size_t... uSTRIDES, typename Ttensor>
-		decltype(auto) pooling(Ttensor const & tensor)
+		Cpooling<Cmax, Ttensor, uSTRIDES...>
+			pooling(Ttensor const & tensor)
 		{
 			return Cpooling<Cmax, Ttensor, uSTRIDES...>(tensor);
+		}
+
+
+		template <typename Ttensor>
+		class Celementwise
+		{
+			Ttensor & m_tensor;
+		public:
+			Celementwise(Ttensor & tensor)
+				: m_tensor(tensor)
+			{}
+
+			template <typename... Tindex>
+			decltype(auto) operator () (Tindex ... index) const
+			{
+				return m_tensor(index...);
+			}
+		};
+		template <typename T, size_t uSIZE0, size_t... uSIZES>
+		class Celementwise<Ctensor<T, uSIZE0, uSIZES...>>
+		{
+			friend class Celementwise;
+
+			Ctensor<T, uSIZE0, uSIZES...> & m_tensor;
+
+			template <typename Tthat, typename... Tindex>
+			void assign(Tthat const & that, Tindex ... index) const
+			{
+				for (size_t uIndex = 0; uIndex < uSIZE0; uIndex++)
+				{
+					elementwise(m_tensor[uIndex]).assign(that, index..., uIndex);
+				}
+			}
+		public:
+			Celementwise(Ctensor<T, uSIZE0, uSIZES...> & tensor)
+				: m_tensor(tensor)
+			{}
+
+			template <typename Tthat>
+			typename Celementwise const & operator = (Tthat const & that) const
+			{
+				assign(that);
+				return *this;
+			}
+
+			template <typename... Tindex>
+			T const & operator () (Tindex ... index) const
+			{
+				return m_tensor(index...);
+			}
+		};
+		template <typename T>
+		class Celementwise<Ctensor<T>>
+		{
+			friend class Celementwise;
+
+			Ctensor<T> & m_tensor;
+
+			template <typename Tthat, typename... Tindex>
+			void assign(Celementwise<Tthat> const & that, Tindex ... index) const
+			{
+				m_tensor = that(index...);
+			}
+			template <typename Tthat, typename... Tindex>
+			void assign(Tthat const & that, Tindex ... index) const
+			{
+				m_tensor = that;
+			}
+		public:
+			Celementwise(Ctensor<T> & tensor)
+				: m_tensor(tensor)
+			{}
+
+			T const & operator () () const
+			{
+				return m_tensor();
+			}
+		};
+		template <typename Ttensor>
+		Celementwise<Ttensor> elementwise(Ttensor & tensor)
+		{
+			return Celementwise<Ttensor>(tensor);
 		}
 
 		//Ctensor<short, 24, 24, 10> convolute(Ctensor<unsigned char, 28, 28, 3> const &, Ctensor<char, 5, 5, 3> const &);
